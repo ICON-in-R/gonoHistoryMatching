@@ -1,5 +1,6 @@
 library(Rcpp)
 
+Rcpp::compileAttributes()
 sourceCpp("src/GonorrheaDTM.cpp")
 
 inputs <- list(
