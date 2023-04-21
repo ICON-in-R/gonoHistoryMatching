@@ -2,22 +2,22 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 sumVector <- function(population, i_start, i_end, j_start, j_end, k_start, k_end, l_start, l_end, m_start, m_end, d_start, d_end, t_start, t_end) {
-    .Call('_gonoHistoryMatching_sumVector', PACKAGE = 'gonoHistoryMatching', population, i_start, i_end, j_start, j_end, k_start, k_end, l_start, l_end, m_start, m_end, d_start, d_end, t_start, t_end)
+    .Call(`_gonoHistoryMatching_sumVector`, population, i_start, i_end, j_start, j_end, k_start, k_end, l_start, l_end, m_start, m_end, d_start, d_end, t_start, t_end)
 }
 
 loadInputParameters <- function(inputPath, Population, Parameters) {
-    invisible(.Call('_gonoHistoryMatching_loadInputParameters', PACKAGE = 'gonoHistoryMatching', inputPath, Population, Parameters))
+    invisible(.Call(`_gonoHistoryMatching_loadInputParameters`, inputPath, Population, Parameters))
 }
 
 modelDynamic <- function(year, month, Population, Parameters) {
-    invisible(.Call('_gonoHistoryMatching_modelDynamic', PACKAGE = 'gonoHistoryMatching', year, month, Population, Parameters))
+    invisible(.Call(`_gonoHistoryMatching_modelDynamic`, year, month, Population, Parameters))
 }
 
 saveToFile <- function(population, filename, Parameters, runTime, nAges) {
-    invisible(.Call('_gonoHistoryMatching_saveToFile', PACKAGE = 'gonoHistoryMatching', population, filename, Parameters, runTime, nAges))
+    invisible(.Call(`_gonoHistoryMatching_saveToFile`, population, filename, Parameters, runTime, nAges))
 }
 
 runmodel <- function(inputs) {
-    .Call('_gonoHistoryMatching_runmodel', PACKAGE = 'gonoHistoryMatching', inputs)
+    .Call(`_gonoHistoryMatching_runmodel`, inputs)
 }
 

@@ -1,3 +1,14 @@
+#ifndef GONOHISTORYMATCHING_H
+#define GONOHISTORYMATCHING_H
+
+#include <Rcpp.h>
+#include <vector>
+#include <cstdlib>
+#include <string>
+#include <numeric>
+#include <RcppCommon.h>
+using namespace Rcpp;
+using namespace std;
 
 class parameters {
   public:
@@ -9,7 +20,7 @@ class parameters {
     int nDiseaseStates;
     int timeHorizon;
     double cDisc;
-    double uDisc ;
+    double uDisc;
     std::vector<std::vector<double>> birthRate;
     std::vector<std::vector<std::vector<double>>> deathRate;
     std::vector<std::vector<std::vector<std::vector<double>>>> newborneDistribution;
@@ -34,7 +45,14 @@ class parameters {
     
     // this operator enables implicit Rcpp::wrap
     operator SEXP();
-    
-    // this ctor enables implicit Rcpp::as
-    parameters(SEXP);
+
+    // // this ctor enables implicit Rcpp::as
+    // parameters(SEXP);
 };
+
+// RCPP_MODULE(mod) {
+//   function("parameters", &parameters);
+// }
+
+
+#endif

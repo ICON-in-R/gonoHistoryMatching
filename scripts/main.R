@@ -1,7 +1,7 @@
 library(Rcpp)
 
 Rcpp::compileAttributes()
-sourceCpp("src/GonorrheaDTM.cpp")
+sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 
 inputs <- list(
   nRaces = 3,
