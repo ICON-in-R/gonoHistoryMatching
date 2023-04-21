@@ -15,6 +15,8 @@ using namespace Rcpp;
 
 using namespace std;
 
+// #include <gonoHistoryMatching_types.h>
+
 class parameters {
   public:
     int nRaces;
