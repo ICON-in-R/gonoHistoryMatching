@@ -2,3 +2,4 @@
 
 useDynLib(gonoHistoryMatching)
 importFrom(Rcpp, sourceCpp)
+importFrom(Rcpp, evalCpp)
