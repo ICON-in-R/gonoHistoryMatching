@@ -45,7 +45,7 @@ double sumVector(std::vector<std::vector<std::vector<std::vector<std::vector<std
 
 // [[Rcpp::export]]
 void loadInputParameters(std::string inputPath, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& Population,
-                         parameters Parameters) {
+                         parameters& Parameters) {
   ifstream ifile(inputPath, ios::in);
 
   //check to see that the file was opened correctly:
@@ -202,7 +202,7 @@ void loadInputParameters(std::string inputPath, std::vector<std::vector<std::vec
 
 // [[Rcpp::export]]
 void modelDynamic(int year, int month, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& Population,
-                  parameters Parameters)
+                  parameters& Parameters)
 {
   int index = year * 12 + month;
   cout << year << "\n";
@@ -287,7 +287,7 @@ void modelDynamic(int year, int month, std::vector<std::vector<std::vector<std::
 
 // [[Rcpp::export]]
 void saveToFile(std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& population,
-                std::string filename, parameters Parameters, int runTime, int nAges) {
+                std::string filename, parameters& Parameters, int runTime, int nAges) {
   std::ofstream ofile(filename);
 
   if (ofile.good()) {

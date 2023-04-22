@@ -37,38 +37,38 @@ BEGIN_RCPP
 END_RCPP
 }
 // loadInputParameters
-void loadInputParameters(std::string inputPath, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& Population, parameters Parameters);
+void loadInputParameters(std::string inputPath, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& Population, parameters& Parameters);
 RcppExport SEXP _gonoHistoryMatching_loadInputParameters(SEXP inputPathSEXP, SEXP PopulationSEXP, SEXP ParametersSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type inputPath(inputPathSEXP);
     Rcpp::traits::input_parameter< std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& >::type Population(PopulationSEXP);
-    Rcpp::traits::input_parameter< parameters >::type Parameters(ParametersSEXP);
+    Rcpp::traits::input_parameter< parameters& >::type Parameters(ParametersSEXP);
     loadInputParameters(inputPath, Population, Parameters);
     return R_NilValue;
 END_RCPP
 }
 // modelDynamic
-void modelDynamic(int year, int month, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& Population, parameters Parameters);
+void modelDynamic(int year, int month, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& Population, parameters& Parameters);
 RcppExport SEXP _gonoHistoryMatching_modelDynamic(SEXP yearSEXP, SEXP monthSEXP, SEXP PopulationSEXP, SEXP ParametersSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type year(yearSEXP);
     Rcpp::traits::input_parameter< int >::type month(monthSEXP);
     Rcpp::traits::input_parameter< std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& >::type Population(PopulationSEXP);
-    Rcpp::traits::input_parameter< parameters >::type Parameters(ParametersSEXP);
+    Rcpp::traits::input_parameter< parameters& >::type Parameters(ParametersSEXP);
     modelDynamic(year, month, Population, Parameters);
     return R_NilValue;
 END_RCPP
 }
 // saveToFile
-void saveToFile(std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& population, std::string filename, parameters Parameters, int runTime, int nAges);
+void saveToFile(std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& population, std::string filename, parameters& Parameters, int runTime, int nAges);
 RcppExport SEXP _gonoHistoryMatching_saveToFile(SEXP populationSEXP, SEXP filenameSEXP, SEXP ParametersSEXP, SEXP runTimeSEXP, SEXP nAgesSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& >::type population(populationSEXP);
     Rcpp::traits::input_parameter< std::string >::type filename(filenameSEXP);
-    Rcpp::traits::input_parameter< parameters >::type Parameters(ParametersSEXP);
+    Rcpp::traits::input_parameter< parameters& >::type Parameters(ParametersSEXP);
     Rcpp::traits::input_parameter< int >::type runTime(runTimeSEXP);
     Rcpp::traits::input_parameter< int >::type nAges(nAgesSEXP);
     saveToFile(population, filename, Parameters, runTime, nAges);
