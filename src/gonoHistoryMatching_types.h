@@ -1,14 +1,20 @@
+// gonoHistoryMatching types
+// 
+//
+
+
 #ifndef GONOHISTORYMATCHING_H
 #define GONOHISTORYMATCHING_H
 
 #include <Rcpp.h>
-#include <vector>
-#include <cstdlib>
-#include <string>
-#include <numeric>
-#include <RcppCommon.h>
+// #include <vector>
+// #include <cstdlib>
+// #include <string>
+// #include <numeric>
+// #include <RcppCommon.h>
+
 using namespace Rcpp;
-using namespace std;
+// using namespace std;
 
 class parameters {
   public:
@@ -43,8 +49,8 @@ class parameters {
       uDisc = 0.0;
      }
     
-    // this operator enables implicit Rcpp::wrap
-    operator SEXP();
+    // // this operator enables implicit Rcpp::wrap
+    // operator SEXP();
 
     // // this ctor enables implicit Rcpp::as
     // parameters(SEXP);
@@ -54,5 +60,13 @@ class parameters {
 //   function("parameters", &parameters);
 // }
 
+// RCPP_MODULE(mod) {
+//   class_<parameters>("parameters")
+//   .default_constructor()
+//   ;
+// }
 
+// https://gallery.rcpp.org/articles/mixing-modules-and-export/
+RCPP_EXPOSED_AS(parameters)
+  
 #endif
