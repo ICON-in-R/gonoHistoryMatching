@@ -46,20 +46,24 @@ double sumVector(std::vector<std::vector<std::vector<std::vector<std::vector<std
 // [[Rcpp::export]]
 void loadInputParameters(std::string inputPath, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& Population,
                          parameters& Parameters) {
+
   ifstream ifile(inputPath, ios::in);
 
   //check to see that the file was opened correctly:
-  if (!ifile.is_open()) {
-    cerr << "There was a problem opening the input file!\n";
-    exit(1);
-  }
+ // if (!ifile.is_open()) {
+ //   cerr << "There was a problem opening the input file!\n";
+ //   exit(1);
+//  }
 
   std::vector<std::vector<double>> vec;
   string lineData;
 
   //load general parameters
-  getline(ifile, lineData); Parameters.cDisc = stod(lineData);
-  getline(ifile, lineData); Parameters.uDisc = stod(lineData);
+  getline(ifile, lineData);
+  Parameters.cDisc = stod(lineData);
+  
+  getline(ifile, lineData);
+  Parameters.uDisc = stod(lineData);
 
   double totalBlack = 0.0;
   double totalHispanic = 0.0;
@@ -221,6 +225,7 @@ void modelDynamic(int year, int month, std::vector<std::vector<std::vector<std::
           for (int m = 0; m < Parameters.nAges; m++)
             for (int d = 0; d < Parameters.nDiseaseStates; d++)
               Population[i][j][k][l][m][d][index + 1] = Population[i][j][k][l][m][d][index];
+  
   int index1 = index + 1;
   int index2 = index + 2;
 
@@ -249,14 +254,14 @@ void modelDynamic(int year, int month, std::vector<std::vector<std::vector<std::
             //monthly continuous dynamic
             for (int m = 0; m < Parameters.nAges; m++)
             {
-              X[0] = 0;//Susceptible
-              X[1] = 0;//Exposed
-              X[2] = 0;//Simptomatically infected
-              X[3] = 0;//Asymptomatically infected
-              X[4] = 0;//Treated
-
-              X[5] = 0;//VaccinatedA with one dose
-              X[6] = 0;//VaccinatedA with two doses
+              X[0] = 0; //Susceptible
+              X[1] = 0; //Exposed
+              X[2] = 0; //Simptomatically infected
+              X[3] = 0; //Asymptomatically infected
+              X[4] = 0; //Treated
+ 
+              X[5] = 0; //VaccinatedA with one dose
+              X[6] = 0; //VaccinatedA with two doses
               X[7] = 0;
               X[8] = 0;
               X[9] = 0;
@@ -347,24 +352,28 @@ int runmodel(Rcpp::List inputs)
       for (int k = 0; k < Parameters.nSexualBehs; k++){
         for (int l = 0; l < Parameters.nSexActs; l++){
           for (int d = 0; d < Parameters.nDiseaseStates; d++){
-            for (int t = 0; t < maxRunTime; t++)
-            {
+            for (int t = 0; t < maxRunTime; t++){
               int index = 0;
-              for (int m1 = 0; m1 < Parameters.nAges / ageGroupSize; m1++) {
+              for (int m1 = 0; m1 < Parameters.nAges / ageGroupSize; m1++) {   //TODO: what does this do?
                 double sum = 0;
+                cout << "age grp: " << m1 << "\n";
+                
                 for (int m = 0; m < ageGroupSize; m++) {
+                  
+                  cout << "pop: " << Population[i][j][k][l][index * ageGroupSize + m][d][t] << " ";
+                  
                   sum = sum + Population[i][j][k][l][index * ageGroupSize + m][d][t];
                   Population[i][j][k][l][index][d][t] = sum;
                   index++;
                 }
               }
-              //change this in order to agregate all age groups that are not included - currently works only for 100 years old
+              //change this in order to aggregate all age groups that are not included - currently works only for 100 years old
               Population[i][j][k][l][Parameters.nAges / ageGroupSize][d][t] = Population[i][j][k][l][Parameters.nAges-1][d][t];
             }
             }}}}}
             
-            //save DTM outputs to file  
-            saveToFile(Population, outputPath, Parameters, maxRunTime, Parameters.nAges / ageGroupSize + 1);
+  //save DTM outputs to file  
+  saveToFile(Population, outputPath, Parameters, maxRunTime, Parameters.nAges / ageGroupSize + 1);
   
   return 0;
 }
