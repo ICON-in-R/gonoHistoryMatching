@@ -296,7 +296,8 @@ void saveToFile(std::vector<std::vector<std::vector<std::vector<std::vector<std:
   std::ofstream ofile(filename);
 
   if (ofile.good()) {
-  //  ofile.flags(std::ios::fixed);  //TODO: why does this cause a crash in R?
+    //////////////////////////////////////////////////////////////////////////
+    //  ofile.flags(std::ios::fixed);  //TODO: why does this cause a crash in R?
 
     // for (int i = 0; i < Parameters.nRaces; i++){
     //   for (int j = 0; j < Parameters.nGenders; j++){
@@ -331,15 +332,16 @@ int runmodel(Rcpp::List inputs)
   Parameters.nDiseaseStates = inputs["nDiseaseStates"];
   Parameters.timeHorizon = inputs["timeHorizon"];
 
-  int maxRunTime = Parameters.timeHorizon * 12 + 2;  //time in time units
+  int maxRunTime = Parameters.timeHorizon * 12 + 2;  //time in units
 
-  std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>> Population(Parameters.nRaces, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>(
-                                                                                                               Parameters.nGenders, std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>(
-                                                                                                               Parameters.nSexualBehs, std::vector<std::vector<std::vector<std::vector<double>>>>(
-                                                                                                               Parameters.nSexActs, std::vector<std::vector<std::vector<double>>>(
-                                                                                                               Parameters.nAges, std::vector<std::vector<double>>(
-                                                                                                               Parameters.nDiseaseStates, std::vector<double>(
-                                                                                                               maxRunTime, 0.0)))))));
+  std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>
+    Population(Parameters.nRaces, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>(
+        Parameters.nGenders, std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>(
+            Parameters.nSexualBehs, std::vector<std::vector<std::vector<std::vector<double>>>>(
+                Parameters.nSexActs, std::vector<std::vector<std::vector<double>>>(
+                    Parameters.nAges, std::vector<std::vector<double>>(
+                        Parameters.nDiseaseStates, std::vector<double>(
+                            maxRunTime, 0.0)))))));
 
   loadInputParameters(inputPath, Population, Parameters);
 
