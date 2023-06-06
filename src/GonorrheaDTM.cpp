@@ -291,29 +291,37 @@ void modelDynamic(int year, int month, std::vector<std::vector<std::vector<std::
 }
 
 // [[Rcpp::export]]
-void saveToFile(std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& population, std::string filename, parameters& Parameters, int runTime, int nAges) {
+void saveToFile(std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& population,
+                std::string filename, parameters& Parameters, int runTime, int nAges) {
   
-  std::ofstream ofile(filename);
+  std::ofstream outfile(filename);
 
-  if (ofile.good()) {
-    //////////////////////////////////////////////////////////////////////////
-    //  ofile.flags(std::ios::fixed);  //TODO: why does this cause a crash in R?
+  if (outfile.is_open()) {
+    if (outfile.good()) {
 
-    // for (int i = 0; i < Parameters.nRaces; i++){
-    //   for (int j = 0; j < Parameters.nGenders; j++){
-    //     for (int k = 0; k < Parameters.nSexualBehs; k++){
-    //       for (int l = 0; l < Parameters.nSexActs; l++){
-    //         for (int m = 0; m < nAges; m++){
-    //           for (int d = 0; d < Parameters.nDiseaseStates; d++){
-    //             for (int t = 0; t < runTime-2; t++){
-    //
-    //               ofile << population[i][j][k][l][m][d][t] << "\t";
-    //               ofile << "\n";
-    //             }}}}}}}
+      outfile.flags(std::ios::fixed);
+      
+      outfile << population[0][0][0][0][0][0][0] << "\t";
+      
+      // for (int i = 0; i < Parameters.nRaces; i++){
+      //   for (int j = 0; j < Parameters.nGenders; j++){
+      //     for (int k = 0; k < Parameters.nSexualBehs; k++){
+      //       for (int l = 0; l < Parameters.nSexActs; l++){
+      //         for (int m = 0; m < nAges; m++){
+      //           for (int d = 0; d < Parameters.nDiseaseStates; d++){
+      //             for (int t = 0; t < runTime-2; t++){
+      // 
+      //               outfile << population[i][j][k][l][m][d][t] << "\t";
+      //               outfile << "\n";
+      //             }}}}}}}
+
+      outfile.close();
+    }
   } else {
     cerr << "There was a problem opening the output file!\n";
-    exit(1); //exit or do additional error checking
+    // exit(1); //exit or do additional error checking
   }
+
 }
 
 // [[Rcpp::export]]
@@ -386,8 +394,7 @@ int runmodel(Rcpp::List inputs)
               // Population[i][j][k][l][Parameters.nAges / ageGroupSize][d][t] = Population[i][j][k][l][Parameters.nAges - 1][d][t];
             // }}}}}}
             
-  //save DTM outputs to file
-  // saveToFile(Population, outputPath, Parameters, maxRunTime, Parameters.nAges / ageGroupSize + 1);
+  saveToFile(Population, outputPath, Parameters, maxRunTime, Parameters.nAges / ageGroupSize + 1);
   
   return 0;
 }
