@@ -1,6 +1,12 @@
+
+# gonorrhea transmission dynamic infectious disease model
+# history matching calibration using C++ code
+
+
 library(Rcpp)
 
-sourceCpp("src/GonorrheaDTM.cpp")
+Rcpp::compileAttributes()
+sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 
 inputs <- list(
   nRaces = 3,
