@@ -1,1 +1,1 @@
-# Gonorrhea Model Calibation using History Matching
+# Gonorrhea Model Calibration using History Matching
