@@ -359,7 +359,7 @@ int runmodel(Rcpp::List inputs)
                 cout << "age grp: " << m1 << "\n";
                 
                 for (int m = 0; m < ageGroupSize; m++) {
-                  
+                  cout << "index: " << index * ageGroupSize + m;
                   cout << "pop: " << Population[i][j][k][l][index * ageGroupSize + m][d][t] << " ";
                   
                   sum = sum + Population[i][j][k][l][index * ageGroupSize + m][d][t];
