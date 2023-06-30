@@ -293,26 +293,35 @@ void modelDynamic(int year, int month, std::vector<std::vector<std::vector<std::
 // [[Rcpp::export]]
 void saveToFile(std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>& population,
                 std::string filename, parameters& Parameters, int runTime, int nAges) {
-  std::ofstream ofile(filename);
+  
+  std::ofstream outfile(filename);
 
-  if (ofile.good()) {
-    ofile.flags(std::ios::fixed);
-    for (int i = 0; i < Parameters.nRaces; i++)
-    {
-      for (int j = 0; j < Parameters.nGenders; j++)
-        for (int k = 0; k < Parameters.nSexualBehs; k++)
-          for (int l = 0; l < Parameters.nSexActs; l++)
-            for (int m = 0; m < nAges; m++)
-              for (int d = 0; d < Parameters.nDiseaseStates; d++)
-              {
-                for (int t = 0; t < runTime-2; t++) ofile << population[i][j][k][l][m][d][t] << "\t";
-                ofile << "\n";
-              }
+  if (outfile.is_open()) {
+    if (outfile.good()) {
+
+      outfile.flags(std::ios::fixed);
+      
+      outfile << population[0][0][0][0][0][0][0] << "\t";
+      
+      // for (int i = 0; i < Parameters.nRaces; i++){
+      //   for (int j = 0; j < Parameters.nGenders; j++){
+      //     for (int k = 0; k < Parameters.nSexualBehs; k++){
+      //       for (int l = 0; l < Parameters.nSexActs; l++){
+      //         for (int m = 0; m < nAges; m++){
+      //           for (int d = 0; d < Parameters.nDiseaseStates; d++){
+      //             for (int t = 0; t < runTime-2; t++){
+      // 
+      //               outfile << population[i][j][k][l][m][d][t] << "\t";
+      //               outfile << "\n";
+      //             }}}}}}}
+
+      outfile.close();
     }
   } else {
     cerr << "There was a problem opening the output file!\n";
-    exit(1); //exit or do additional error checking
+    // exit(1); //exit or do additional error checking
   }
+
 }
 
 // [[Rcpp::export]]
@@ -331,9 +340,16 @@ int runmodel(Rcpp::List inputs)
   Parameters.nDiseaseStates = inputs["nDiseaseStates"];
   Parameters.timeHorizon = inputs["timeHorizon"];
 
-  int maxRunTime = Parameters.timeHorizon * 12 + 2;  //time in time units
+  int maxRunTime = Parameters.timeHorizon * 12 + 2;  //time in units
 
-  std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>> Population(Parameters.nRaces, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>(Parameters.nGenders, std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>(Parameters.nSexualBehs, std::vector<std::vector<std::vector<std::vector<double>>>>(Parameters.nSexActs, std::vector<std::vector<std::vector<double>>>(Parameters.nAges, std::vector<std::vector<double>>(Parameters.nDiseaseStates, std::vector<double>(maxRunTime, 0.0)))))));
+  std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>
+    Population(Parameters.nRaces, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>(
+        Parameters.nGenders, std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>(
+            Parameters.nSexualBehs, std::vector<std::vector<std::vector<std::vector<double>>>>(
+                Parameters.nSexActs, std::vector<std::vector<std::vector<double>>>(
+                    Parameters.nAges, std::vector<std::vector<double>>(
+                        Parameters.nDiseaseStates, std::vector<double>(
+                            maxRunTime, 0.0)))))));
 
   loadInputParameters(inputPath, Population, Parameters);
 
@@ -347,32 +363,39 @@ int runmodel(Rcpp::List inputs)
   int ageGroupSize = 5;
   
   //aggregate to age groups
-  for (int i = 0; i < Parameters.nRaces; i++){
-    for (int j = 0; j < Parameters.nGenders; j++){
-      for (int k = 0; k < Parameters.nSexualBehs; k++){
-        for (int l = 0; l < Parameters.nSexActs; l++){
-          for (int d = 0; d < Parameters.nDiseaseStates; d++){
-            for (int t = 0; t < maxRunTime; t++){
+  // for (int i = 0; i < Parameters.nRaces; i++){
+  int i = 0;
+    // for (int j = 0; j < Parameters.nGenders; j++){
+    int j = 0;
+      // for (int k = 0; k < Parameters.nSexualBehs; k++){
+      int k = 0;
+        // for (int l = 0; l < Parameters.nSexActs; l++){
+        int l = 0;
+          // for (int d = 0; d < Parameters.nDiseaseStates; d++){
+          int d = 0;
+            // for (int t = 0; t < maxRunTime; t++){
+            int t = 0;
+            
               int index = 0;
-              for (int m1 = 0; m1 < Parameters.nAges / ageGroupSize; m1++) {   //TODO: what does this do?
+              
+              for (int m1 = 0; m1 < Parameters.nAges / ageGroupSize; m1++) {   //TODO: why have nAges loop like this?
                 double sum = 0;
-                cout << "age grp: " << m1 << "\n";
                 
                 for (int m = 0; m < ageGroupSize; m++) {
                   cout << "index: " << index * ageGroupSize + m;
                   cout << "pop: " << Population[i][j][k][l][index * ageGroupSize + m][d][t] << " ";
                   
                   sum = sum + Population[i][j][k][l][index * ageGroupSize + m][d][t];
-                  Population[i][j][k][l][index][d][t] = sum;
+                  Population[i][j][k][l][index][d][t] = sum;     //TODO: why is this causing a crash?
                   index++;
                 }
               }
-              //change this in order to aggregate all age groups that are not included - currently works only for 100 years old
-              Population[i][j][k][l][Parameters.nAges / ageGroupSize][d][t] = Population[i][j][k][l][Parameters.nAges-1][d][t];
-            }
-            }}}}}
+              
+              //change this in order to aggregate all age groups that are not included
+              // currently works only for 100 years old
+              // Population[i][j][k][l][Parameters.nAges / ageGroupSize][d][t] = Population[i][j][k][l][Parameters.nAges - 1][d][t];
+            // }}}}}}
             
-  //save DTM outputs to file  
   saveToFile(Population, outputPath, Parameters, maxRunTime, Parameters.nAges / ageGroupSize + 1);
   
   return 0;

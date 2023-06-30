@@ -1,3 +1,8 @@
+
+# gonorrhea transmission dynamic infectious disease model
+# history matching calibration using C++ code
+
+
 library(Rcpp)
 
 Rcpp::compileAttributes()
