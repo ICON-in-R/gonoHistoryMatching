@@ -382,6 +382,8 @@ int runmodel(Rcpp::List inputs)
                 double sum = 0;
                 
                 for (int m = 0; m < ageGroupSize; m++) {
+                  cout << "index: " << index * ageGroupSize + m;
+                  cout << "pop: " << Population[i][j][k][l][index * ageGroupSize + m][d][t] << " ";
                   
                   sum = sum + Population[i][j][k][l][index * ageGroupSize + m][d][t];
                   Population[i][j][k][l][index][d][t] = sum;     //TODO: why is this causing a crash?
