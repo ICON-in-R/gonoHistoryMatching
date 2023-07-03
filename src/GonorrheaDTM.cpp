@@ -186,21 +186,21 @@ int** imatrix(long nrl, long nrh, long ncl, long nch)
 
 // [[Rcpp::export]]
 double** submatrix(double** a, long oldrl, long oldrh, long oldcl, long oldch, long newrl, long newcl)
-/* point a submatrix [newrl..][newcl..] to a[oldrl..oldrh][oldcl..oldch] */
 {
+// point a submatrix [newrl..][newcl..] to a[oldrl..oldrh][oldcl..oldch]
     long i, j, nrow = oldrh - oldrl + 1, ncol = oldcl - newcl;
     double** m;
 
-    /* allocate array of pointers to rows */
+    // allocate array of pointers to rows
     m = (double**)malloc((size_t)((nrow + NR_END) * sizeof(double*)));
     if (!m) nrerror("allocation failure in submatrix()");
     m += NR_END;
     m -= newrl;
 
-    /* set pointers to rows */
+    // set pointers to rows
     for (i = oldrl, j = newrl; i <= oldrh; i++, j++) m[j] = a[i] + ncol;
 
-    /* return pointer to array of pointers to rows */
+    // return pointer to array of pointers to rows
     return m;
 }
 
@@ -214,39 +214,39 @@ and ncol=nch-ncl+1. The routine should be called with the address
     long i, j, nrow = nrh - nrl + 1, ncol = nch - ncl + 1;
     double** m;
 
-    /* allocate pointers to rows */
+    // allocate pointers to rows
     m = (double**)malloc((size_t)((nrow + NR_END) * sizeof(double*)));
     if (!m) nrerror("allocation failure in convert_matrix()");
     m += NR_END;
     m -= nrl;
 
-    /* set pointers to rows */
+    // set pointers to rows
     m[nrl] = a - ncl;
     for (i = 1, j = nrl + 1; i < nrow; i++, j++) m[j] = m[j - 1] + ncol;
-    /* return pointer to array of pointers to rows */
+    // return pointer to array of pointers to rows
     return m;
 }
 
 // [[Rcpp::export]]
 double*** f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
-/* allocate a double 3tensor with range t[nrl..nrh][ncl..nch][ndl..ndh] */
 {
+// allocate a double 3tensor with range t[nrl..nrh][ncl..nch][ndl..ndh]
     long i, j, nrow = nrh - nrl + 1, ncol = nch - ncl + 1, ndep = ndh - ndl + 1;
     double*** t;
 
-    /* allocate pointers to pointers to rows */
+    // allocate pointers to pointers to rows
     t = (double***)malloc((size_t)((nrow + NR_END) * sizeof(double**)));
     if (!t) nrerror("allocation failure 1 in f3tensor()");
     t += NR_END;
     t -= nrl;
 
-    /* allocate pointers to rows and set pointers to them */
+    // allocate pointers to rows and set pointers to them
     t[nrl] = (double**)malloc((size_t)((nrow * ncol + NR_END) * sizeof(double*)));
     if (!t[nrl]) nrerror("allocation failure 2 in f3tensor()");
     t[nrl] += NR_END;
     t[nrl] -= ncl;
 
-    /* allocate rows and set pointers to them */
+    // allocate rows and set pointers to them
     t[nrl][ncl] = (double*)malloc((size_t)((nrow * ncol * ndep + NR_END) * sizeof(double)));
     if (!t[nrl][ncl]) nrerror("allocation failure 3 in f3tensor()");
     t[nrl][ncl] += NR_END;
@@ -259,87 +259,87 @@ double*** f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
         for (j = ncl + 1; j <= nch; j++) t[i][j] = t[i][j - 1] + ndep;
     }
 
-    /* return pointer to array of pointers to rows */
+    // return pointer to array of pointers to rows
     return t;
 }
 
 // [[Rcpp::export]]
 void free_vector(double* v, long nl, long nh)
-/* free a double vector allocated with vector() */
 {
+// free a double vector allocated with vector()
     free((FREE_ARG)(v + nl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_ivector(int* v, long nl, long nh)
-/* free an int vector allocated with ivector() */
 {
+// free an int vector allocated with ivector()
     free((FREE_ARG)(v + nl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_cvector(unsigned char* v, long nl, long nh)
-/* free an unsigned char vector allocated with cvector() */
 {
+// free an unsigned char vector allocated with cvector()
     free((FREE_ARG)(v + nl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_lvector(unsigned long* v, long nl, long nh)
-/* free an unsigned long vector allocated with lvector() */
 {
+// free an unsigned long vector allocated with lvector()
     free((FREE_ARG)(v + nl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_dvector(double* v, long nl, long nh)
-/* free a double vector allocated with dvector() */
 {
+// free a double vector allocated with dvector()
     free((FREE_ARG)(v + nl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_matrix(double** m, long nrl, long nrh, long ncl, long nch)
-/* free a double matrix allocated by matrix() */
 {
+// free a double matrix allocated by matrix()
     free((FREE_ARG)(m[nrl] + ncl - NR_END));
     free((FREE_ARG)(m + nrl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_dmatrix(double** m, long nrl, long nrh, long ncl, long nch)
-/* free a double matrix allocated by dmatrix() */
 {
+// free a double matrix allocated by dmatrix()
     free((FREE_ARG)(m[nrl] + ncl - NR_END));
     free((FREE_ARG)(m + nrl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_imatrix(int** m, long nrl, long nrh, long ncl, long nch)
-/* free an int matrix allocated by imatrix() */
 {
+// free an int matrix allocated by imatrix()
     free((FREE_ARG)(m[nrl] + ncl - NR_END));
     free((FREE_ARG)(m + nrl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_submatrix(double** b, long nrl, long nrh, long ncl, long nch)
-/* free a submatrix allocated by submatrix() */
 {
+// free a submatrix allocated by submatrix()
     free((FREE_ARG)(b + nrl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_convert_matrix(double** b, long nrl, long nrh, long ncl, long nch)
-/* free a matrix allocated by convert_matrix() */
 {
+// free a matrix allocated by convert_matrix()
     free((FREE_ARG)(b + nrl - NR_END));
 }
 
 // [[Rcpp::export]]
 void free_f3tensor(double*** t, long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
-/* free a double f3tensor allocated by f3tensor() */
 {
+// free a double f3tensor allocated by f3tensor()
     free((FREE_ARG)(t[nrl][ncl] + ndl - NR_END));
     free((FREE_ARG)(t[nrl] + ncl - NR_END));
     free((FREE_ARG)(t + nrl - NR_END));
@@ -476,14 +476,14 @@ double newInfections(double* y, parameters& Parameters, int race, int gender, in
     int m = 0.0;
 
     // limit only to the population of interest
-    if ((age < Parameters.Age_min) || (age > Parameters.Age_max) || (sexAct == 0) || (gender == 1 & sexBeh > 0)) return 0.0;
+    if ((age < Parameters.Age_min) || (age > Parameters.Age_max) || (sexAct == 0) || ((gender == 1) & (sexBeh > 0))) return 0.0;
     else
     {
         double susceptible = y[0 + Parameters.nDiseaseStates * (age + Parameters.nAges * (sexAct + Parameters.nSexActs * (sexBeh + Parameters.nSexualBehs * (gender + Parameters.nGenders * race))))];
         double infectedRatio = 0.0;
 
         switch (gender * Parameters.nSexualBehs + sexBeh) {
-        case 0://MSW -> WSM
+        case 0:  //MSW -> WSM
             j = 1; k = 0;
             for (int i = 0; i < Parameters.nRaces; i++)
                 for (int l = 1; l < Parameters.nSexActs; l++)
@@ -495,7 +495,7 @@ double newInfections(double* y, parameters& Parameters, int race, int gender, in
                         infectedRatio = infectedRatio + Parameters.nmbPartners[sexAct] * Parameters.sexFrequency[race][gender][sexBeh][age] * contact_ratio * Parameters.pAges[age][m] * Parameters.pRaces[race][i] * Parameters.pSexActs[sexAct][l] * (y[2 + Parameters.nDiseaseStates * (m + Parameters.nAges * (l + Parameters.nSexActs * (k + Parameters.nSexualBehs * (j + Parameters.nGenders * i))))] + y[3 + Parameters.nDiseaseStates * (m + Parameters.nAges * (l + Parameters.nSexActs * (k + Parameters.nSexualBehs * (j + Parameters.nGenders * i))))]) / totalSubPopulation;
                     }
             break;
-        case 1://MSM -> MSM, MSMW
+        case 1:  //MSM -> MSM, MSMW
             // with MSM
             //HARDCODED 2 - shoul be proportional to homo vs bi
             j = 0; k = 1;
@@ -521,7 +521,7 @@ double newInfections(double* y, parameters& Parameters, int race, int gender, in
                         infectedRatio = infectedRatio + Parameters.nmbPartners[sexAct] * Parameters.sexFrequency[race][gender][sexBeh][age] * contact_ratio * Parameters.pAges[age][m] * Parameters.pRaces[race][i] * Parameters.pSexActs[sexAct][l] * (y[2 + Parameters.nDiseaseStates * (m + Parameters.nAges * (l + Parameters.nSexActs * (k + Parameters.nSexualBehs * (j + Parameters.nGenders * i))))] + y[3 + Parameters.nDiseaseStates * (m + Parameters.nAges * (l + Parameters.nSexActs * (k + Parameters.nSexualBehs * (j + Parameters.nGenders * i))))]) / totalSubPopulation;
                     }
             break;
-        case 2://MSMW -> MSM, MSMW, WSM
+        case 2:  //MSMW -> MSM, MSMW, WSM
             //HARDCODED 3 - should be proportional to hetero
             // with MSMW
             j = 0; k = 2;
@@ -557,7 +557,7 @@ double newInfections(double* y, parameters& Parameters, int race, int gender, in
                         infectedRatio = infectedRatio + Parameters.nmbPartners[sexAct] * Parameters.sexFrequency[race][gender][sexBeh][age] * contact_ratio * Parameters.pAges[age][m] * Parameters.pRaces[race][i] * Parameters.pSexActs[sexAct][l] * (y[2 + Parameters.nDiseaseStates * (m + Parameters.nAges * (l + Parameters.nSexActs * (k + Parameters.nSexualBehs * (j + Parameters.nGenders * i))))] + y[3 + Parameters.nDiseaseStates * (m + Parameters.nAges * (l + Parameters.nSexActs * (k + Parameters.nSexualBehs * (j + Parameters.nGenders * i))))]) / totalSubPopulation;
                     }
             break;
-        case 3://WSM -> MSW, MSMW
+        case 3:  //WSM -> MSW, MSMW
             // with MSW
             j = 0; k = 1;
             for (int i = 0; i < Parameters.nRaces; i++)
@@ -584,7 +584,7 @@ double newInfections(double* y, parameters& Parameters, int race, int gender, in
         }
         //HARDCODED
 
-       //determine the calibration age groupp
+       //determine the calibration age group
        int age_group = 0;
        for (int m1 = 0; m1 < Parameters.ageGroup_size; m1++)
            if (age >= Parameters.ageGroup_bound[m1]) age_group = m1;
@@ -625,7 +625,6 @@ void derivs(double** PopulationX, parameters& Parameters, psa_parameters* psaPar
                                 //for (int tau = 1; tau <= max_tau; tau++)
                                 //    totalWaning = totalWaning + wanA1[tau] * PopulationX[time - tau][index + 5] + wanA2[tau] * PopulationX[time - tau][index + 6] + wanA3[tau] * PopulationX[time - tau][index + 7] + wanA4[tau] * PopulationX[time - tau][index + 8]
                                 //                              + wanB2[tau] * PopulationX[time - tau][index + 6] + wanB3[tau] * PopulationX[time - tau][index + 6] + wanB4[tau] * PopulationX[time - tau][index + 6];
-
                                 
                                 dydx[index] = ((m == 0) ? newbornePopulation * Parameters.popDistribution[i][j][k][l] * (1 - Parameters.deathRate[i][j][m]) : aging_rate * y[index_a1]) 
                                              + psaParameters[ns].recoveryRate[j][k] * y[index + 4] + psaParameters[ns].recoveryAsympRate[j][k] * y[index + 2] 
@@ -761,7 +760,7 @@ void odeint(double** PopulationX, parameters& Parameters, psa_parameters* psaPar
     double dxsav = (x2 - x1) / 100.0;
 
     vector<double> xp(KMAXX, 0.0);
-    vector<vector<double>> yp(nvar, vector<double>(KMAXX, 0.0));  //???????
+    vector<vector<double>> yp(nvar, vector<double>(KMAXX, 0.0));  //???
 
     int nstp, i;
     int kount = 0;
@@ -813,7 +812,7 @@ void odeint(double** PopulationX, parameters& Parameters, psa_parameters* psaPar
 void loadInitialPopulation(string inputPath, double*** PopulationX, parameters& Parameters, int NumbParallel, double initialInfection) {
     ifstream ifile(inputPath, ios::in);
 
-    //check to see that the file was opened correctly:
+    //check to see that the file was opened correctly
     if (!ifile.is_open()) {
         cerr << "There was a problem opening the input file!-dem\n";
         exit(1);
@@ -944,7 +943,7 @@ void loadDemographics(string inputPath, parameters& Parameters) {
         Parameters.pRaces.push_back(vector<double>());
         for (int i1 = 0; i1 < Parameters.nRaces; i1++)
             if (i == i1) Parameters.pRaces[i].push_back(d);
-            else Parameters.pRaces[i].push_back((1 - d) / 2);  //HARDCODED 2 to equaly split proportion of contact among other race/ethnic groups
+            else Parameters.pRaces[i].push_back((1 - d) / 2);  //HARDCODED 2 to equally split proportion of contact among other race/ethnic groups
     }
     
     //load assortative mixing for sexual activity
@@ -964,9 +963,9 @@ void loadDemographics(string inputPath, parameters& Parameters) {
     for (int m = 0; m < Parameters.nAges; m++) {
         Parameters.pAges.push_back(vector<double>());
         for (int m1 = 0; m1 < Parameters.nAges; m1++) {
-            if (m >= Parameters.Age_min & m <= Parameters.Age_max & m1 >= Parameters.Age_min & m1 <= Parameters.Age_max)
+            if ((m >= Parameters.Age_min) & (m <= Parameters.Age_max) & (m1 >= Parameters.Age_min) & (m1 <= Parameters.Age_max))
             {
-                //determine the calibration age groupp
+                //determine the calibration age group
                 int age_group = 0;
                 int age_group1 = 0;
 
@@ -982,7 +981,8 @@ void loadDemographics(string inputPath, parameters& Parameters) {
         }
     }
 
-    //load average number of partners //HARDCODED for testing
+    // load average number of partners
+    // HARDCODED for testing
     Parameters.nmbPartners.push_back(0.0);
     Parameters.nmbPartners.push_back(1.0);
     Parameters.nmbPartners.push_back(1.0);
@@ -1324,14 +1324,14 @@ void updatedCalibrationParameters(std::string filename, parameters& Parameters){
     }
     else {
         cerr << "There was a problem opening the output file!\n";
-        exit(1);//exit or do additional error checking
+        exit(1);
     }
 }
 
 // [[Rcpp::export]]
 void saveCalibratedIncidence(double** Population, std::string filename, parameters& Parameters) {
     
-    //agregate and save incidence
+    //aggregate and save incidence
     int dim = Parameters.nRaces * Parameters.nGenders * Parameters.nSexualBehs * Parameters.ageGroup_size;
 
     double** Incidence = new double* [5];  //HARDCODED for 5 years
@@ -1341,7 +1341,6 @@ void saveCalibratedIncidence(double** Population, std::string filename, paramete
     std::ofstream ofile(filename);
     if (ofile.good()) {
         int d = 13;   //HARDCODED 13 for incidence
-
 
         for (int index = 0; index < dim; index++) {
             //for (int t = 4; t <= 4; t++){
@@ -1397,7 +1396,7 @@ void saveCalibratedIncidence(double** Population, std::string filename, paramete
     }
     else {
         cerr << "There was a problem opening the output file!\n";
-        exit(1);//exit or do additional error checking
+        exit(1);  
     }
 }
 
@@ -1423,10 +1422,10 @@ void saveIncidence(double** population, std::string filename, parameters& Parame
         ofile << "\n";
         for (int i = 0; i < Parameters.nRaces; i++) {
 
-            //incidence - asymptomaticaly infected
+            //incidence - asymptomatically infected
             int d = 12;
             for (int t = 0; t < runTime - 1; t++) {
-                ofile << i << "," << 0 << "," << t << ", ";//HARDCODED 0 for asymptomatic infections
+                ofile << i << "," << 0 << "," << t << ", ";  //HARDCODED 0 for asymptomatic infections
 
                 //MSW
                 j = 0;
@@ -1465,14 +1464,13 @@ void saveIncidence(double** population, std::string filename, parameters& Parame
                     if (t == 0) ofile << (population[t][index_0] + population[t][index_1] + population[t][index_2]) << ",";
                     else ofile << (population[t][index_0] + population[t][index_1] + population[t][index_2]) - (population[t - 1][index_0] + population[t - 1][index_1] + population[t - 1][index_2]) << ",";
                 }
-
                 ofile << "\n";
             }
 
             //incidence - symptomatic infections
             d = 13;
             for (int t = 0; t < runTime - 1; t++) {
-                ofile << i << "," << 0 << "," << t << ", ";//HARDCODED 0 for asymptomatic infections
+                ofile << i << "," << 0 << "," << t << ", ";  //HARDCODED 0 for asymptomatic infections
 
                 //MSW
                 j = 0;
@@ -1518,7 +1516,7 @@ void saveIncidence(double** population, std::string filename, parameters& Parame
     }
     else {
         cerr << "There was a problem opening the output file!\n";
-        exit(1);//exit or do additional error checking
+        exit(1);  //exit or do additional error checking
     }
 }
 
@@ -1539,72 +1537,70 @@ void saveTrajectories(double** population, std::string filename, parameters& Par
                                 for (int t = 0; t < runTime - 2; t++) ofile << population[t][index_d] << "\t";
                                 ofile << "\n";
                             }
-
     }
     else {
         cerr << "There was a problem opening the output file!\n";
-        exit(1);//exit or do additional error checking
+        exit(1);  //exit or do additional error checking
     }
 }
 
 // [[Rcpp::export]]
 int runmodel(Rcpp::List inputs)
 {
-    int NumbSim = 2;
-
-    parameters Parameters;
-    
-    Parameters.nRaces = 3;
-    Parameters.nGenders = 2;
-    Parameters.nSexualBehs = 3;
-    Parameters.nSexActs = 3;
-    Parameters.nAges = 101;
-    Parameters.nDiseaseStates = 14;  //12 disease related stated plus two more state for incidence to be corrected
-    Parameters.timeHorizon = 7;      // atoi(argv[10]);
-
-    std::string Path = "./Inputs/";
-    
-    psa_parameters psaParameters[1000];
-
-    int maxRunTime = Parameters.timeHorizon * 12 + 2;  //time in time units
-
-    int NumbParallel = 1; //HARDCODED placeholder for multithreading 
-    
-    double*** PopulationX = new double** [NumbParallel];
-    for (int np = 0; np < NumbParallel; np++) {
-        PopulationX[np] = new double* [maxRunTime];
-        for (int t = 0; t < maxRunTime; t++)
-            PopulationX[np][t] = new double[Parameters.nRaces * Parameters.nGenders * Parameters.nSexualBehs * Parameters.nSexActs * Parameters.nAges * Parameters.nDiseaseStates];
+  int NumbSim = 2;
+  
+  parameters Parameters;
+  
+  Parameters.nRaces = 3;
+  Parameters.nGenders = 2;
+  Parameters.nSexualBehs = 3;
+  Parameters.nSexActs = 3;
+  Parameters.nAges = 101;
+  Parameters.nDiseaseStates = 14;  //12 disease related stated plus two more state for incidence to be corrected
+  Parameters.timeHorizon = 7;      // atoi(argv[10]);
+  
+  std::string Path = "./Inputs/";
+  
+  psa_parameters psaParameters[1000];
+  
+  int maxRunTime = Parameters.timeHorizon * 12 + 2;  //time in time units
+  
+  int NumbParallel = 1; //HARDCODED placeholder for multithreading 
+  
+  double*** PopulationX = new double** [NumbParallel];
+  for (int np = 0; np < NumbParallel; np++) {
+    PopulationX[np] = new double* [maxRunTime];
+    for (int t = 0; t < maxRunTime; t++)
+      PopulationX[np][t] = new double[Parameters.nRaces * Parameters.nGenders * Parameters.nSexualBehs * Parameters.nSexActs * Parameters.nAges * Parameters.nDiseaseStates];
+  }
+  
+  double initialInfection = 0.1;
+  
+  loadInitialPopulation(Path + "Initial population.txt", PopulationX, Parameters, NumbParallel, initialInfection);
+  loadDemographics(Path + "Demographic parameters.txt", Parameters);
+  loadParameters(Path + "Parameters.txt", Parameters, psaParameters, NumbSim);
+  loadCalibrationParameters(Path + "Calibration parameters.txt", Parameters, NumbParallel);
+  
+  //run model dynamics
+  runModelDynamics(PopulationX[0], Parameters, psaParameters, 0,0);
+  
+  //save 
+  updatedCalibrationParameters(Path + "Calibration parameters.txt", Parameters);
+  saveCalibratedIncidence(PopulationX[0], Path + "Calibrated incidence.txt", Parameters);
+  
+  //save outputs
+  saveIncidence(PopulationX[0], Path + "Incidence.csv", Parameters, maxRunTime);
+  saveTrajectories(PopulationX[0], Path + "Trajectories.txt", Parameters, maxRunTime);
+  
+  //release memory
+  for (int np = 0; np < NumbParallel; np++) {
+    for (int j = 0; j < maxRunTime; j++) {
+      delete[] PopulationX[np][j];
     }
-        
-    double initialInfection = 0.1;
-
-    loadInitialPopulation(Path + "Initial population.txt", PopulationX, Parameters, NumbParallel, initialInfection);
-    loadDemographics(Path + "Demographic parameters.txt", Parameters);
-    loadParameters(Path + "Parameters.txt", Parameters, psaParameters, NumbSim);
-    loadCalibrationParameters(Path + "Calibration parameters.txt", Parameters, NumbParallel);
-    
-    //run model dynamics
-    runModelDynamics(PopulationX[0], Parameters, psaParameters, 0,0);
-        
-    //save 
-    updatedCalibrationParameters(Path + "Calibration parameters.txt", Parameters);
-    saveCalibratedIncidence(PopulationX[0], Path + "Calibrated incidence.txt", Parameters);
-    
-    //save outputs
-    saveIncidence(PopulationX[0], Path + "Incidence.csv", Parameters, maxRunTime);
-    saveTrajectories(PopulationX[0], Path + "Trajectories.txt", Parameters, maxRunTime);
-    
-    //release memory
-    for (int np = 0; np < NumbParallel; np++) {
-        for (int j = 0; j < maxRunTime; j++) {
-            delete[] PopulationX[np][j];
-        }
-        delete[] PopulationX[np];
-    }
-    delete[] PopulationX;
-
-    return 0;
+    delete[] PopulationX[np];
+  }
+  delete[] PopulationX;
+  
+  return 0;
 }
-
 
