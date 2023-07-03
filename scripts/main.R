@@ -1,5 +1,5 @@
 
-# gonorrhea transmission dynamic infectious disease model
+# gonorrhoea transmission dynamic infectious disease model
 # history matching calibration using C++ code
 
 

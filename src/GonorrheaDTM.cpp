@@ -1,6 +1,9 @@
-// GonorrheaDTMModel.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-//
+#include <RcppCommon.h>
+using namespace Rcpp;
+
+// GonorrheaDTMModel.cpp : This file contains the 'main' function
+// Program execution begins and ends there
+
 #include <fstream>
 #include <vector>
 #include <cstdlib>
@@ -13,6 +16,10 @@
 #include <thread>
 
 using namespace std;
+
+#include "gonoHistoryMatching_types.h"
+
+#include <Rcpp.h>
 
 #include <math.h>
 
@@ -27,6 +34,8 @@ using namespace std;
 #define NR_END 1
 #define FREE_ARG char*
 
+
+// [[Rcpp::export]]
 double SIGN(double a, double b)
 {
     if (b >= 0) a = abs(a);
@@ -34,6 +43,7 @@ double SIGN(double a, double b)
     return a;
 }
 
+// [[Rcpp::export]]
 void nrerror(string error_text)
 /* Numerical Recipes standard error handler */
 {
@@ -43,6 +53,7 @@ void nrerror(string error_text)
     exit(1);
 }
 
+// [[Rcpp::export]]
 double* vector1(long nl, long nh)
 /* allocate a double vector with subscript range v[nl..nh] */
 {
@@ -53,6 +64,7 @@ double* vector1(long nl, long nh)
     return v - nl + NR_END;
 }
 
+// [[Rcpp::export]]
 int* ivector(long nl, long nh)
 /* allocate an int vector with subscript range v[nl..nh] */
 {
@@ -63,6 +75,7 @@ int* ivector(long nl, long nh)
     return v - nl + NR_END;
 }
 
+// [[Rcpp::export]]
 unsigned char* cvector(long nl, long nh)
 /* allocate an unsigned char vector with subscript range v[nl..nh] */
 {
@@ -73,6 +86,7 @@ unsigned char* cvector(long nl, long nh)
     return v - nl + NR_END;
 }
 
+// [[Rcpp::export]]
 unsigned long* lvector(long nl, long nh)
 /* allocate an unsigned long vector with subscript range v[nl..nh] */
 {
@@ -83,6 +97,7 @@ unsigned long* lvector(long nl, long nh)
     return v - nl + NR_END;
 }
 
+// [[Rcpp::export]]
 double* dvector(long nl, long nh)
 /* allocate a double vector with subscript range v[nl..nh] */
 {
@@ -93,6 +108,7 @@ double* dvector(long nl, long nh)
     return v - nl + NR_END;
 }
 
+// [[Rcpp::export]]
 double** matrix(long nrl, long nrh, long ncl, long nch)
 /* allocate a double matrix with subscript range m[nrl..nrh][ncl..nch] */
 {
@@ -117,6 +133,7 @@ double** matrix(long nrl, long nrh, long ncl, long nch)
     return m;
 }
 
+// [[Rcpp::export]]
 double** dmatrix(long nrl, long nrh, long ncl, long nch)
 /* allocate a double matrix with subscript range m[nrl..nrh][ncl..nch] */
 {
@@ -141,6 +158,7 @@ double** dmatrix(long nrl, long nrh, long ncl, long nch)
     return m;
 }
 
+// [[Rcpp::export]]
 int** imatrix(long nrl, long nrh, long ncl, long nch)
 /* allocate a int matrix with subscript range m[nrl..nrh][ncl..nch] */
 {
@@ -166,6 +184,7 @@ int** imatrix(long nrl, long nrh, long ncl, long nch)
     return m;
 }
 
+// [[Rcpp::export]]
 double** submatrix(double** a, long oldrl, long oldrh, long oldcl, long oldch, long newrl, long newcl)
 /* point a submatrix [newrl..][newcl..] to a[oldrl..oldrh][oldcl..oldch] */
 {
@@ -185,6 +204,7 @@ double** submatrix(double** a, long oldrl, long oldrh, long oldcl, long oldch, l
     return m;
 }
 
+// [[Rcpp::export]]
 double** convert_matrix(double* a, long nrl, long nrh, long ncl, long nch)
 /* allocate a double matrix m[nrl..nrh][ncl..nch] that points to the matrix
 declared in the standard C manner as a[nrow][ncol], where nrow=nrh-nrl+1
@@ -207,6 +227,7 @@ and ncol=nch-ncl+1. The routine should be called with the address
     return m;
 }
 
+// [[Rcpp::export]]
 double*** f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
 /* allocate a double 3tensor with range t[nrl..nrh][ncl..nch][ndl..ndh] */
 {
@@ -242,36 +263,42 @@ double*** f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
     return t;
 }
 
+// [[Rcpp::export]]
 void free_vector(double* v, long nl, long nh)
 /* free a double vector allocated with vector() */
 {
     free((FREE_ARG)(v + nl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_ivector(int* v, long nl, long nh)
 /* free an int vector allocated with ivector() */
 {
     free((FREE_ARG)(v + nl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_cvector(unsigned char* v, long nl, long nh)
 /* free an unsigned char vector allocated with cvector() */
 {
     free((FREE_ARG)(v + nl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_lvector(unsigned long* v, long nl, long nh)
 /* free an unsigned long vector allocated with lvector() */
 {
     free((FREE_ARG)(v + nl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_dvector(double* v, long nl, long nh)
 /* free a double vector allocated with dvector() */
 {
     free((FREE_ARG)(v + nl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_matrix(double** m, long nrl, long nrh, long ncl, long nch)
 /* free a double matrix allocated by matrix() */
 {
@@ -279,6 +306,7 @@ void free_matrix(double** m, long nrl, long nrh, long ncl, long nch)
     free((FREE_ARG)(m + nrl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_dmatrix(double** m, long nrl, long nrh, long ncl, long nch)
 /* free a double matrix allocated by dmatrix() */
 {
@@ -286,6 +314,7 @@ void free_dmatrix(double** m, long nrl, long nrh, long ncl, long nch)
     free((FREE_ARG)(m + nrl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_imatrix(int** m, long nrl, long nrh, long ncl, long nch)
 /* free an int matrix allocated by imatrix() */
 {
@@ -293,18 +322,21 @@ void free_imatrix(int** m, long nrl, long nrh, long ncl, long nch)
     free((FREE_ARG)(m + nrl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_submatrix(double** b, long nrl, long nrh, long ncl, long nch)
 /* free a submatrix allocated by submatrix() */
 {
     free((FREE_ARG)(b + nrl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_convert_matrix(double** b, long nrl, long nrh, long ncl, long nch)
 /* free a matrix allocated by convert_matrix() */
 {
     free((FREE_ARG)(b + nrl - NR_END));
 }
 
+// [[Rcpp::export]]
 void free_f3tensor(double*** t, long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
 /* free a double f3tensor allocated by f3tensor() */
 {
@@ -313,63 +345,8 @@ void free_f3tensor(double*** t, long nrl, long nrh, long ncl, long nch, long ndl
     free((FREE_ARG)(t + nrl - NR_END));
 }
 
-struct parameters {
-    int nRaces = 0;
-    int nGenders = 0;
-    int nSexualBehs = 0;
-    int nSexActs = 0;
-    int nAges = 0;
-    int nDiseaseStates = 0;
 
-    int timeHorizon = 0;
-
-    int Age_min = 0;
-    int Age_max = 0;
-    vector<double> ageGroup_bound;
-    int ageGroup_size = 4;
-    
-    vector<vector<double>> birthRate;
-    vector<vector<vector<double>>> deathRate;
-    vector<vector<vector<vector<double>>>> popDistribution;
-    
-    vector<vector<double>>  pRaces;
-    vector<vector<double>>  pSexActs;
-    vector<vector<double>>  pAges;
-
-    vector<double> nmbPartners;
-    vector<vector<vector<vector<double>>>> sexFrequency;
-
-    vector<vector<vector<vector<vector<double>>>>> transmissionRate;
-    
-    vector<vector<vector<vector<vector<double>>>>> calibrationTarget;
-
-    vector<vector<vector<vector<vector<double>>>>> vaccA1;
-    vector<vector<vector<vector<vector<double>>>>> vaccA2;
-    vector<vector<vector<vector<vector<double>>>>> vaccA3;
-    vector<vector<vector<vector<vector<double>>>>> vaccA4;
-    vector<vector<vector<vector<vector<double>>>>> vaccB2;
-    vector<vector<vector<vector<vector<double>>>>> vaccB3;
-    vector<vector<vector<vector<vector<double>>>>> vaccB4;
-    vector<double> waningImmunityA1;
-    vector<double> waningImmunityA2;
-    vector<double> waningImmunityA3;
-    vector<double> waningImmunityA4;
-    vector<double> waningImmunityB2;
-    vector<double> waningImmunityB3;
-    vector<double> waningImmunityB4;
-    
-};
-
-struct psa_parameters {
-    vector<vector<double>> latencyRate;
-    vector<vector<double>> propAsymp;
-    vector<vector<double>> tretmentRate;
-    vector<vector<double>> recoveryRate;
-    vector<vector<double>> recoveryAsympRate;
-    vector<vector<vector<vector<double>>>> screeningRate;
-
-};
-
+// [[Rcpp::export]]
 void rkck(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age, double y[], double dydx[], int n, double x, double h, double yout[], double yerr[], double year, double month, void (*derivs)(double**, parameters&, psa_parameters*, int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np)
 {
     int i;
@@ -423,9 +400,9 @@ void rkck(double** PopulationX, parameters& Parameters, psa_parameters* psaParam
     free_vector(ak4, 1, n);
     free_vector(ak3, 1, n);
     free_vector(ak2, 1, n);
-
 }
 
+// [[Rcpp::export]]
 void rkqs(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age, double y[], double dydx[], int n, double* x, double htry, double eps, double yscal[], double* hdid, double* hnext, double year, double month, void (*derivs)(double**, parameters&, psa_parameters* , int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np)
 {
     void rkck(double** PopulationX, parameters & Parameters, psa_parameters * psaParameters, int race, int gender, int sexBehs, int age, double y[], double dydx[], int n, double x, double h, double yout[], double yerr[], double year, double month, void (*derivs)(double**, parameters&, psa_parameters * , int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np);
@@ -473,6 +450,7 @@ void rkqs(double** PopulationX, parameters& Parameters, psa_parameters* psaParam
 #define KMAXX 200
 #define NMAX = 50
 
+// [[Rcpp::export]]
 double sumVector(double* Population1, parameters& Parameters, int i_start, int i_end, int j_start, int j_end, int k_start, int k_end, int l_start, int l_end, int m_start, int m_end, int d_start, int d_end) {
     double sum = 0;
     for (int i = i_start; i <= i_end; i++)
@@ -485,6 +463,7 @@ double sumVector(double* Population1, parameters& Parameters, int i_start, int i
     return sum;
 }
 
+// [[Rcpp::export]]
 double newInfections(double* y, parameters& Parameters, int race, int gender, int sexBeh, int sexAct, int age, int np) {
 
     //HARDCODED 
@@ -601,7 +580,6 @@ double newInfections(double* y, parameters& Parameters, int race, int gender, in
                         double contact_ratio = (Parameters.popDistribution[i][0][2][1] + Parameters.popDistribution[i][0][2][2]) / (Parameters.popDistribution[i][0][1][1] + Parameters.popDistribution[i][0][2][1] + Parameters.popDistribution[i][0][1][2] + Parameters.popDistribution[i][0][2][2]); //HARDCODED
                         infectedRatio = infectedRatio + Parameters.nmbPartners[sexAct] * Parameters.sexFrequency[race][gender][sexBeh][age] * contact_ratio * Parameters.pAges[age][m] * Parameters.pRaces[race][i] * Parameters.pSexActs[sexAct][l] * (y[2 + Parameters.nDiseaseStates * (m + Parameters.nAges * (l + Parameters.nSexActs * (k + Parameters.nSexualBehs * (j + Parameters.nGenders * i))))] + y[3 + Parameters.nDiseaseStates * (m + Parameters.nAges * (l + Parameters.nSexActs * (k + Parameters.nSexualBehs * (j + Parameters.nGenders * i))))]) / totalSubPopulation;
                     }
-
             break;
         }
         //HARDCODED
@@ -616,6 +594,7 @@ double newInfections(double* y, parameters& Parameters, int race, int gender, in
     }
 }
 
+// [[Rcpp::export]]
 void derivs(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age, double x, double* y, double* dydx, double year, double month, int ns, int np)
 {
     //HARDCODED
@@ -761,6 +740,7 @@ void derivs(double** PopulationX, parameters& Parameters, psa_parameters* psaPar
     }
 }
 
+// [[Rcpp::export]]
 void odeint(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age, double* ystart, double year, double month, int size, int ns, int np) {
 
     /* Runge - Kutta driver with adaptive stepsize control.Integrates the starting values ystart(1:NVAR) from x1 to x2 _
@@ -769,7 +749,6 @@ void odeint(double** PopulationX, parameters& Parameters, psa_parameters* psaPar
        number of goodand bad(but retriedand fixed) steps taken, and ystart(1:NVAR) is replaced by values at the end of _
        the integration interval.derivs is the user supplied subroutine for calculating the right - hand side derivative, _
        while rkqs is the name of the stepper routine to be used. */
-
 
     double eps = EPS;
     double h1 = H1;
@@ -828,10 +807,9 @@ void odeint(double** PopulationX, parameters& Parameters, psa_parameters* psaPar
         h = hnext;
     }
     nrerror("Too many steps in routine odeint");
-
 }
 
-
+// [[Rcpp::export]]
 void loadInitialPopulation(string inputPath, double*** PopulationX, parameters& Parameters, int NumbParallel, double initialInfection) {
     ifstream ifile(inputPath, ios::in);
 
@@ -898,7 +876,6 @@ void loadInitialPopulation(string inputPath, double*** PopulationX, parameters& 
                         else {
                             Parameters.popDistribution[i][j][k].push_back(pom / totalWhite); sumW = Parameters.popDistribution[i][j][k][l] + sumW;
                         }
-
                 }
             }
         }
@@ -906,10 +883,10 @@ void loadInitialPopulation(string inputPath, double*** PopulationX, parameters& 
     Parameters.popDistribution[0][Parameters.nGenders - 1][Parameters.nSexualBehs - 1][Parameters.nSexActs - 1] = Parameters.popDistribution[0][Parameters.nGenders - 1][Parameters.nSexualBehs - 1][Parameters.nSexActs - 1] + (1 - sumB);
     Parameters.popDistribution[1][Parameters.nGenders - 1][Parameters.nSexualBehs - 1][Parameters.nSexActs - 1] = Parameters.popDistribution[1][Parameters.nGenders - 1][Parameters.nSexualBehs - 1][Parameters.nSexActs - 1] + (1 - sumH);
     Parameters.popDistribution[2][Parameters.nGenders - 1][Parameters.nSexualBehs - 1][Parameters.nSexActs - 1] = Parameters.popDistribution[2][Parameters.nGenders - 1][Parameters.nSexualBehs - 1][Parameters.nSexActs - 1] + (1 - sumW);
-ifile.close();
-
+  ifile.close();
 }
 
+// [[Rcpp::export]]
 void loadDemographics(string inputPath, parameters& Parameters) {
     ifstream ifile(inputPath, ios::in);
     
@@ -980,7 +957,6 @@ void loadDemographics(string inputPath, parameters& Parameters) {
                 if (l == l1) Parameters.pSexActs[l].push_back(d);
                 else Parameters.pSexActs[l].push_back((1-d));
     }
-    
 
     //load assortative mixing for age group between Amin and Amax years of age with defined ageBand
     lineStream >> d;
@@ -1006,7 +982,6 @@ void loadDemographics(string inputPath, parameters& Parameters) {
         }
     }
 
-    
     //load average number of partners //HARDCODED for testing
     Parameters.nmbPartners.push_back(0.0);
     Parameters.nmbPartners.push_back(1.0);
@@ -1027,11 +1002,10 @@ void loadDemographics(string inputPath, parameters& Parameters) {
             }
         }
     }
-    
     ifile.close();
-
 }
 
+// [[Rcpp::export]]
 void loadParameters(string inputPath, parameters& Parameters, psa_parameters* psaParameters, int NumbSim) {
     ifstream ifile(inputPath, ios::in);
 
@@ -1185,7 +1159,6 @@ void loadParameters(string inputPath, parameters& Parameters, psa_parameters* ps
     getline(ifile, lineData); stringstream lineStreamB2(lineData); while (lineStreamB2 >> d) Parameters.waningImmunityB2.push_back(d);
     getline(ifile, lineData); stringstream lineStreamB3(lineData); while (lineStreamB3 >> d) Parameters.waningImmunityB3.push_back(d);
     getline(ifile, lineData); stringstream lineStreamB4(lineData); while (lineStreamB4 >> d) Parameters.waningImmunityB4.push_back(d);
-
     
     //load other parameters
     for (int ns = 0; ns < NumbSim; ns++)
@@ -1245,13 +1218,11 @@ void loadParameters(string inputPath, parameters& Parameters, psa_parameters* ps
                 }
             }
         }
-
     }
     ifile.close();
-
-    
 }
 
+// [[Rcpp::export]]
 void loadCalibratioTargets(string inputPath, parameters& Parameters) {
     ifstream ifile(inputPath, ios::in);
 
@@ -1284,6 +1255,7 @@ void loadCalibratioTargets(string inputPath, parameters& Parameters) {
     }
 }
 
+// [[Rcpp::export]]
 void loadCalibrationParameters(string inputPath, parameters& Parameters, int numbParallel) {
     ifstream ifile(inputPath, ios::in);
 
@@ -1322,6 +1294,7 @@ void loadCalibrationParameters(string inputPath, parameters& Parameters, int num
     }
 }
 
+// [[Rcpp::export]]
 void runModelDynamics(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int iter, int np) {
 
     int size = Parameters.nRaces * Parameters.nGenders * Parameters.nSexualBehs * Parameters.nSexActs * Parameters.nAges * Parameters.nDiseaseStates;
@@ -1335,11 +1308,11 @@ void runModelDynamics(double** PopulationX, parameters& Parameters, psa_paramete
 
             //run RK integrator change 1 - HARDCODED
             for (int rk = 0; rk < 1; rk++) odeint(PopulationX, Parameters, psaParameters, 0, 0, 0, 0, PopulationX[time + 1], year, month, size, iter, np);
-
         }
     }
 }
 
+// [[Rcpp::export]]
 void updatedCalibrationParameters(std::string filename, parameters& Parameters){
     std::ofstream ofile(filename);
     if (ofile.good()) {
@@ -1355,6 +1328,7 @@ void updatedCalibrationParameters(std::string filename, parameters& Parameters){
     }
 }
 
+// [[Rcpp::export]]
 void saveCalibratedIncidence(double** Population, std::string filename, parameters& Parameters) {
     
     //agregate and save incidence
@@ -1427,7 +1401,7 @@ void saveCalibratedIncidence(double** Population, std::string filename, paramete
     }
 }
 
-
+// [[Rcpp::export]]
 void saveIncidence(double** population, std::string filename, parameters& Parameters, int runTime) {
 
     std::ofstream ofile(filename);
@@ -1548,6 +1522,7 @@ void saveIncidence(double** population, std::string filename, parameters& Parame
     }
 }
 
+// [[Rcpp::export]]
 void saveTrajectories(double** population, std::string filename, parameters& Parameters, int runTime) {
 
     std::ofstream ofile(filename);
@@ -1572,9 +1547,8 @@ void saveTrajectories(double** population, std::string filename, parameters& Par
     }
 }
 
-
-
-int main(int argc, char* argv[])
+// [[Rcpp::export]]
+int runmodel(Rcpp::List inputs)
 {
     int NumbSim = 2;
 
@@ -1586,17 +1560,15 @@ int main(int argc, char* argv[])
     Parameters.nSexActs = 3;
     Parameters.nAges = 101;
     Parameters.nDiseaseStates = 14;  //12 disease related stated plus two more state for incidence to be corrected
-    Parameters.timeHorizon = 7;// atoi(argv[10]);
+    Parameters.timeHorizon = 7;      // atoi(argv[10]);
 
-    string Path = "./Results/";
-    // string Path = "C:/MZivkovicGojovic/Dev/GSK Model/Model v0.0/Results/";
+    std::string Path = "./Inputs/";
     
     psa_parameters psaParameters[1000];
 
     int maxRunTime = Parameters.timeHorizon * 12 + 2;  //time in time units
 
-    int NumbParallel = 1;//HARDCODED placeholder for multythreading 
-    
+    int NumbParallel = 1; //HARDCODED placeholder for multithreading 
     
     double*** PopulationX = new double** [NumbParallel];
     for (int np = 0; np < NumbParallel; np++) {
@@ -1605,7 +1577,7 @@ int main(int argc, char* argv[])
             PopulationX[np][t] = new double[Parameters.nRaces * Parameters.nGenders * Parameters.nSexualBehs * Parameters.nSexActs * Parameters.nAges * Parameters.nDiseaseStates];
     }
         
-    double initialInfection = 0.1; //HARDCODED value
+    double initialInfection = 0.1;
 
     loadInitialPopulation(Path + "Initial population.txt", PopulationX, Parameters, NumbParallel, initialInfection);
     loadDemographics(Path + "Demographic parameters.txt", Parameters);
@@ -1633,7 +1605,6 @@ int main(int argc, char* argv[])
     delete[] PopulationX;
 
     return 0;
-    
 }
 
 
