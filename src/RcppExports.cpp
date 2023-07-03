@@ -24,11 +24,11 @@ BEGIN_RCPP
 END_RCPP
 }
 // nrerror
-void nrerror(string error_text);
+void nrerror(std::string error_text);
 RcppExport SEXP _gonoHistoryMatching_nrerror(SEXP error_textSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< string >::type error_text(error_textSEXP);
+    Rcpp::traits::input_parameter< std::string >::type error_text(error_textSEXP);
     nrerror(error_text);
     return R_NilValue;
 END_RCPP
@@ -475,11 +475,11 @@ BEGIN_RCPP
 END_RCPP
 }
 // loadInitialPopulation
-void loadInitialPopulation(string inputPath, double*** PopulationX, parameters& Parameters, int NumbParallel, double initialInfection);
+void loadInitialPopulation(std::string inputPath, double*** PopulationX, parameters& Parameters, int NumbParallel, double initialInfection);
 RcppExport SEXP _gonoHistoryMatching_loadInitialPopulation(SEXP inputPathSEXP, SEXP PopulationXSEXP, SEXP ParametersSEXP, SEXP NumbParallelSEXP, SEXP initialInfectionSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< string >::type inputPath(inputPathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type inputPath(inputPathSEXP);
     Rcpp::traits::input_parameter< double*** >::type PopulationX(PopulationXSEXP);
     Rcpp::traits::input_parameter< parameters& >::type Parameters(ParametersSEXP);
     Rcpp::traits::input_parameter< int >::type NumbParallel(NumbParallelSEXP);
@@ -489,22 +489,22 @@ BEGIN_RCPP
 END_RCPP
 }
 // loadDemographics
-void loadDemographics(string inputPath, parameters& Parameters);
+void loadDemographics(std::string inputPath, parameters& Parameters);
 RcppExport SEXP _gonoHistoryMatching_loadDemographics(SEXP inputPathSEXP, SEXP ParametersSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< string >::type inputPath(inputPathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type inputPath(inputPathSEXP);
     Rcpp::traits::input_parameter< parameters& >::type Parameters(ParametersSEXP);
     loadDemographics(inputPath, Parameters);
     return R_NilValue;
 END_RCPP
 }
 // loadParameters
-void loadParameters(string inputPath, parameters& Parameters, psa_parameters* psaParameters, int NumbSim);
+void loadParameters(std::string inputPath, parameters& Parameters, psa_parameters* psaParameters, int NumbSim);
 RcppExport SEXP _gonoHistoryMatching_loadParameters(SEXP inputPathSEXP, SEXP ParametersSEXP, SEXP psaParametersSEXP, SEXP NumbSimSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< string >::type inputPath(inputPathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type inputPath(inputPathSEXP);
     Rcpp::traits::input_parameter< parameters& >::type Parameters(ParametersSEXP);
     Rcpp::traits::input_parameter< psa_parameters* >::type psaParameters(psaParametersSEXP);
     Rcpp::traits::input_parameter< int >::type NumbSim(NumbSimSEXP);
@@ -513,22 +513,22 @@ BEGIN_RCPP
 END_RCPP
 }
 // loadCalibratioTargets
-void loadCalibratioTargets(string inputPath, parameters& Parameters);
+void loadCalibratioTargets(std::string inputPath, parameters& Parameters);
 RcppExport SEXP _gonoHistoryMatching_loadCalibratioTargets(SEXP inputPathSEXP, SEXP ParametersSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< string >::type inputPath(inputPathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type inputPath(inputPathSEXP);
     Rcpp::traits::input_parameter< parameters& >::type Parameters(ParametersSEXP);
     loadCalibratioTargets(inputPath, Parameters);
     return R_NilValue;
 END_RCPP
 }
 // loadCalibrationParameters
-void loadCalibrationParameters(string inputPath, parameters& Parameters, int numbParallel);
+void loadCalibrationParameters(std::string inputPath, parameters& Parameters, int numbParallel);
 RcppExport SEXP _gonoHistoryMatching_loadCalibrationParameters(SEXP inputPathSEXP, SEXP ParametersSEXP, SEXP numbParallelSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< string >::type inputPath(inputPathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type inputPath(inputPathSEXP);
     Rcpp::traits::input_parameter< parameters& >::type Parameters(ParametersSEXP);
     Rcpp::traits::input_parameter< int >::type numbParallel(numbParallelSEXP);
     loadCalibrationParameters(inputPath, Parameters, numbParallel);

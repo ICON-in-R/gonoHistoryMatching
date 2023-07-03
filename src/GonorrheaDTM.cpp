@@ -17,20 +17,21 @@ using namespace Rcpp;
 
 using namespace std;
 
+#include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+#include <math.h>
+
 #include "gonoHistoryMatching_types.h"
 
 #include <Rcpp.h>
-
-#include <math.h>
 
 #define SAFETY 0.9
 #define PGROW -0.2
 #define PSHRNK -0.25
 #define ERRCON 1.89e-4
 
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
 #define NR_END 1
 #define FREE_ARG char*
 
@@ -44,7 +45,7 @@ double SIGN(double a, double b)
 }
 
 // [[Rcpp::export]]
-void nrerror(string error_text)
+void nrerror(std::string error_text)
 /* Numerical Recipes standard error handler */
 {
     //fprintf(stderr, "Numerical Recipes run-time error...\n");
@@ -347,7 +348,9 @@ void free_f3tensor(double*** t, long nrl, long nrh, long ncl, long nch, long ndl
 
 
 // [[Rcpp::export]]
-void rkck(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age, double y[], double dydx[], int n, double x, double h, double yout[], double yerr[], double year, double month, void (*derivs)(double**, parameters&, psa_parameters*, int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np)
+void rkck(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age,
+          double y[], double dydx[], int n, double x, double h, double yout[], double yerr[], double year, double month,
+          void (*derivs)(double**, parameters&, psa_parameters*, int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np)
 {
     int i;
     static double a2 = 0.2, a3 = 0.3, a4 = 0.6, a5 = 1.0, a6 = 0.875, b21 = 0.2,
@@ -403,9 +406,13 @@ void rkck(double** PopulationX, parameters& Parameters, psa_parameters* psaParam
 }
 
 // [[Rcpp::export]]
-void rkqs(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age, double y[], double dydx[], int n, double* x, double htry, double eps, double yscal[], double* hdid, double* hnext, double year, double month, void (*derivs)(double**, parameters&, psa_parameters* , int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np)
+void rkqs(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age,
+          double y[], double dydx[], int n, double* x, double htry, double eps, double yscal[], double* hdid, double* hnext, double year, double month,
+          void (*derivs)(double**, parameters&, psa_parameters* , int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np)
 {
-    void rkck(double** PopulationX, parameters & Parameters, psa_parameters * psaParameters, int race, int gender, int sexBehs, int age, double y[], double dydx[], int n, double x, double h, double yout[], double yerr[], double year, double month, void (*derivs)(double**, parameters&, psa_parameters * , int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np);
+    void rkck(double** PopulationX, parameters & Parameters, psa_parameters * psaParameters, int race, int gender, int sexBehs, int age,
+              double y[], double dydx[], int n, double x, double h, double yout[], double yerr[], double year, double month,
+              void (*derivs)(double**, parameters&, psa_parameters * , int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np);
     int i;
     double errmax, h, htemp, xnew, * yerr, * ytemp;
     yerr = vector1(1, n);
@@ -436,6 +443,7 @@ void rkqs(double** PopulationX, parameters& Parameters, psa_parameters* psaParam
     free_vector(yerr, 1, n);
 }
 
+//TODO: why are these here? duplication?
 #include <math.h>
 #define MAXSTP 10000
 #define TINY 1.0e-30
@@ -809,7 +817,7 @@ void odeint(double** PopulationX, parameters& Parameters, psa_parameters* psaPar
 }
 
 // [[Rcpp::export]]
-void loadInitialPopulation(string inputPath, double*** PopulationX, parameters& Parameters, int NumbParallel, double initialInfection) {
+void loadInitialPopulation(std::string inputPath, double*** PopulationX, parameters& Parameters, int NumbParallel, double initialInfection) {
     ifstream ifile(inputPath, ios::in);
 
     //check to see that the file was opened correctly
@@ -819,7 +827,7 @@ void loadInitialPopulation(string inputPath, double*** PopulationX, parameters& 
     }
 
     std::vector<std::vector<double>> vec;
-    string lineData;
+    std::string lineData;
 
     //load initial population distribution
     double totalBlack = 0.0;
@@ -886,7 +894,7 @@ void loadInitialPopulation(string inputPath, double*** PopulationX, parameters& 
 }
 
 // [[Rcpp::export]]
-void loadDemographics(string inputPath, parameters& Parameters) {
+void loadDemographics(std::string inputPath, parameters& Parameters) {
     ifstream ifile(inputPath, ios::in);
     
     //check to see that the file was opened correctly:
@@ -896,7 +904,7 @@ void loadDemographics(string inputPath, parameters& Parameters) {
     }
     
     std::vector<std::vector<double>> vec;
-    string lineData;
+    std::string lineData;
 
     //load age group structure for calibration
     getline(ifile, lineData);  Parameters.Age_min = stoi(lineData);
@@ -1006,7 +1014,7 @@ void loadDemographics(string inputPath, parameters& Parameters) {
 }
 
 // [[Rcpp::export]]
-void loadParameters(string inputPath, parameters& Parameters, psa_parameters* psaParameters, int NumbSim) {
+void loadParameters(std::string inputPath, parameters& Parameters, psa_parameters* psaParameters, int NumbSim) {
     ifstream ifile(inputPath, ios::in);
 
     //check to see that the file was opened correctly:
@@ -1015,7 +1023,7 @@ void loadParameters(string inputPath, parameters& Parameters, psa_parameters* ps
         exit(1);
     }
         
-    string lineData;
+    std::string lineData;
     
     //load vaccination.rate.A1 
     for (int i = 0; i < Parameters.nRaces; i++) {
@@ -1223,7 +1231,7 @@ void loadParameters(string inputPath, parameters& Parameters, psa_parameters* ps
 }
 
 // [[Rcpp::export]]
-void loadCalibratioTargets(string inputPath, parameters& Parameters) {
+void loadCalibratioTargets(std::string inputPath, parameters& Parameters) {
     ifstream ifile(inputPath, ios::in);
 
     //check to see that the file was opened correctly:
@@ -1233,7 +1241,7 @@ void loadCalibratioTargets(string inputPath, parameters& Parameters) {
     }
 
     std::vector<std::vector<double>> vec;
-    string lineData;
+    std::string lineData;
 
     //load calibration targets: race, gender, sex.beh, age group, time 
     for (int i = 0; i < Parameters.nRaces; i++) {
@@ -1256,17 +1264,17 @@ void loadCalibratioTargets(string inputPath, parameters& Parameters) {
 }
 
 // [[Rcpp::export]]
-void loadCalibrationParameters(string inputPath, parameters& Parameters, int numbParallel) {
+void loadCalibrationParameters(std::string inputPath, parameters& Parameters, int numbParallel) {
     ifstream ifile(inputPath, ios::in);
 
-    //check to see that the file was opened correctly:
+    //check file opened correctly
     if (!ifile.is_open()) {
         cerr << "There was a problem opening the input file!\n";
         exit(1);
     }
 
     std::vector<std::vector<double>> vec;
-    string lineData;
+    std::string lineData;
 
     //load calibrated contact frequency: race, gender, sex.beh 
     for (int np = 0; np < numbParallel; np++) {
@@ -1540,7 +1548,7 @@ void saveTrajectories(double** population, std::string filename, parameters& Par
     }
     else {
         cerr << "There was a problem opening the output file!\n";
-        exit(1);  //exit or do additional error checking
+        exit(1);
     }
 }
 
@@ -1568,8 +1576,10 @@ int runmodel(Rcpp::List inputs)
   int NumbParallel = 1; //HARDCODED placeholder for multithreading 
   
   double*** PopulationX = new double** [NumbParallel];
+  
   for (int np = 0; np < NumbParallel; np++) {
     PopulationX[np] = new double* [maxRunTime];
+    
     for (int t = 0; t < maxRunTime; t++)
       PopulationX[np][t] = new double[Parameters.nRaces * Parameters.nGenders * Parameters.nSexualBehs * Parameters.nSexActs * Parameters.nAges * Parameters.nDiseaseStates];
   }

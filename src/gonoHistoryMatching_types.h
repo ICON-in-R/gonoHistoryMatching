@@ -70,7 +70,7 @@ class parameters {
       Age_min = 0;
       Age_max = 0;
       ageGroup_size = 4;
-      }
+    }
 };
 
 class psa_parameters {
@@ -81,6 +81,9 @@ class psa_parameters {
     std::vector<std::vector<double>> recoveryRate;
     std::vector<std::vector<double>> recoveryAsympRate;
     std::vector<std::vector<std::vector<std::vector<double>>>> screeningRate;
+    
+    psa_parameters() {
+    }
 };
 
 // https://gallery.rcpp.org/articles/mixing-modules-and-export/
@@ -88,6 +91,3 @@ RCPP_EXPOSED_AS(parameters)
 RCPP_EXPOSED_AS(psa_parameters)
   
 #endif
-
-  
-  
