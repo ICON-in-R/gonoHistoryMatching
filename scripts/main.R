@@ -51,10 +51,11 @@ wave0 <- cbind(initial_points, initial_results)
 
 ##TODO: write a get_results helper?
 # 
-# get_results <- function(...) {
+# get_results <- function(input, ...) {
+#   write.table(input)  
 #   runmodel(...)
 #   out <- read.delim()
-#   # extract values for calibration
+#   # extract, rearrange values for calibration
 # }
 
 
