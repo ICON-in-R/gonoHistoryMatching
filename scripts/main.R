@@ -49,6 +49,15 @@ initial_results <- runmodel(initial_points)
 wave0 <- cbind(initial_points, initial_results)
 
 
+##TODO: write a get_results helper?
+# 
+# get_results <- function(...) {
+#   runmodel(...)
+#   out <- read.delim()
+#   # extract values for calibration
+# }
+
+
 ###########
 # emulator
 
