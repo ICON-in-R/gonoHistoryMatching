@@ -40,14 +40,29 @@ get_results <- function(input) {
   inc_mat_to_vector(out)
 }
 
+#
+test_get_results <- function(input, indx = c(1,2,3)) {
+  # replace a subset of the inputs
+  params <- read.table(file = "Inputs/Calibration parameters0.txt",
+                       col.names = FALSE, row.names = FALSE)
+  params[indx] <- input
+  write.table(params, file = "Inputs/Calibration parameters.txt",
+              col.names = FALSE, row.names = FALSE)
+  runmodel()
+  out <- read.delim(file = "Inputs/Calibrated incidence.txt", header = FALSE)
+  out <- out[indx, ]
+  # rearrange to calibration format
+  inc_mat_to_vector(out)
+}
+
 #############
 # input prep
 
-ethnicity_grps <- c("a","b","c")
+ethnicity_grps <- paste0("e", 1:3)
 sex_grps <- c("male", "female")
 sexbeh_grps <- c("heterosexual", "homosexual", "bisexual")
-age_grps <- c(0,1,2,3)
-inc_years <- 2017:2021
+age_grps <-  paste0("a", 0:3)
+inc_years <- paste0("y", 2017:2021)
 
 groups_mat <-
   expand.grid(age_grp = age_grps,
@@ -56,7 +71,7 @@ groups_mat <-
               ethnicity = ethnicity_grps,
               time = inc_years)
 
-groups_out <- do.call(paste, groups_mat)
+groups_out <- do.call(paste0, groups_mat)
 
 n_grps_out <- length(groups_out)
 
@@ -66,7 +81,7 @@ groups_in_mat <-
               sex = sex_grps,
               ethnicity = ethnicity_grps)
 
-groups_in <- do.call(paste, groups_in_mat)
+groups_in <- do.call(paste0, groups_in_mat)
 
 n_grps_in <- length(groups_in)
 ranges_in <- rep(list(c(0, 1)), n_grps_in) |> 
@@ -90,7 +105,7 @@ targets <-
   map(as.list)
 
 # n_sim <- n_grps_in*10
-n_sim <- 2
+n_sim <- 10
 
 # latin hypercube design
 # cols: parameters
@@ -110,7 +125,8 @@ initial_results <- t(apply(initial_points, 1, get_results))
 
 # all initial values
 wave0 <- cbind(initial_points, initial_results) |> 
-  `colnames<-`(c(groups_in, groups_out))
+  `colnames<-`(c(groups_in, groups_out)) |> 
+  as.data.frame()
 
 
 ###########
@@ -125,7 +141,7 @@ library(hmer)
 ems_wave1 <-
   emulator_from_data(input_data = wave0,
                      output_names = names(targets),
-                     ranges = ranges_in, 
+                     ranges = ranges_in)#, 
                      specified_priors = list(hyper_p = rep(0.55, length(targets))))
 
 emulator_plot(ems_wave1$R200, params = c('beta1', 'gamma'))
@@ -136,7 +152,7 @@ emulator_plot(ems_wave1$R200, plot_type = 'var', params = c('beta1', 'gamma'))
 
 summary(ems_wave1$R200$model)$adj.r.squared
 
-emulator_plot(ems_wave1$R200, plot_type = 'imp', 
+emulator_plot(ems_wave1$R200, plot_type = 'imp',
               targets = targets, params = c('beta1', 'gamma'), cb=TRUE)
 
 emulator_plot(ems_wave1, plot_type = 'imp', 
