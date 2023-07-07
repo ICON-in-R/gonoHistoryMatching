@@ -21,7 +21,7 @@ updatedCalibrationParameters <- function(filename, Parameters) {
     invisible(.Call(`_gonoHistoryMatching_updatedCalibrationParameters`, filename, Parameters))
 }
 
-runmodel <- function(inputs) {
-    .Call(`_gonoHistoryMatching_runmodel`, inputs)
+runmodel <- function() {
+    .Call(`_gonoHistoryMatching_runmodel`)
 }
 

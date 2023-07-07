@@ -2,15 +2,36 @@
 # gonorrhoea transmission dynamic infectious disease model
 # history matching calibration using C++ code
 # https://danny-sc.github.io/determ_workshop/
+Rcpp::compileAttributes()
 
 library(dplyr)
 library(Rcpp)
 
-Rcpp::compileAttributes()
 sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 
-transmissionRate <- 1
-res <- runmodel(transmissionRate)
+res <- runmodel()
+
+
+# original values
+calib_params <- c(0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0,
+                  0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0,
+                  0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0)
+
+#' DTM helper 
+#' @param input transmission rate
+#' @value incidence by group
+#' @examples
+#' out <- get_results(calib_params)
+#' 
+get_results <- function(input) {
+  write.table(input, file = "Inputs/Calibration parameters.txt",
+              col.names = FALSE, row.names = FALSE)
+  runmodel()
+  out <- read.delim(file = "Inputs/Calibrated incidence.txt", header = FALSE)
+  # rearrange for calibration
+  ##TODO:
+  out
+}
 
 # inputs
 # transmission rates:
@@ -19,7 +40,7 @@ res <- runmodel(transmissionRate)
 #   sexual behaviour 3
 
 n_grps <- 3*2*3
-ranges <- rep(list(c(0, 100)), n_grps)
+ranges <- rep(list(c(0, 1)), n_grps)
 
 # calibration targets
 
@@ -43,20 +64,12 @@ for (i in 1:n_grps) {
   initial_points[, i] <- lhs_points[, i]*ranges[[i]][2]
 }
 
-initial_results <- runmodel(initial_points)
+initial_results[[i]] <- get_results(initial_points[i, ])
 
 # initial values
 wave0 <- cbind(initial_points, initial_results)
 
 
-##TODO: write a get_results helper?
-# 
-# get_results <- function(input, ...) {
-#   write.table(input)  
-#   runmodel(...)
-#   out <- read.delim()
-#   # extract, rearrange values for calibration
-# }
 
 
 ###########

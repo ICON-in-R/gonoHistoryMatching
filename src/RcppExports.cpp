@@ -70,13 +70,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // runmodel
-int runmodel(Rcpp::List inputs);
-RcppExport SEXP _gonoHistoryMatching_runmodel(SEXP inputsSEXP) {
+int runmodel();
+RcppExport SEXP _gonoHistoryMatching_runmodel() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::List >::type inputs(inputsSEXP);
-    rcpp_result_gen = Rcpp::wrap(runmodel(inputs));
+    rcpp_result_gen = Rcpp::wrap(runmodel());
     return rcpp_result_gen;
 END_RCPP
 }
@@ -87,7 +86,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gonoHistoryMatching_loadCalibratioTargets", (DL_FUNC) &_gonoHistoryMatching_loadCalibratioTargets, 2},
     {"_gonoHistoryMatching_loadCalibrationParameters", (DL_FUNC) &_gonoHistoryMatching_loadCalibrationParameters, 3},
     {"_gonoHistoryMatching_updatedCalibrationParameters", (DL_FUNC) &_gonoHistoryMatching_updatedCalibrationParameters, 2},
-    {"_gonoHistoryMatching_runmodel", (DL_FUNC) &_gonoHistoryMatching_runmodel, 1},
+    {"_gonoHistoryMatching_runmodel", (DL_FUNC) &_gonoHistoryMatching_runmodel, 0},
     {NULL, NULL, 0}
 };
 
