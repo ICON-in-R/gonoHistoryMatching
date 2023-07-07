@@ -13,9 +13,16 @@ sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 res <- runmodel()
 
 # original values
+# for testing
 calib_params <- c(0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0,
                   0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0,
                   0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0)
+
+#
+inc_mat_to_vector <- function(x) {
+  x_na <- x[ , colSums(is.na(x)) == 0]
+  c(t(as.matrix(x_na)))
+}
 
 #' DTM helper 
 #' @param input transmission rate
@@ -28,11 +35,13 @@ get_results <- function(input) {
               col.names = FALSE, row.names = FALSE)
   runmodel()
   out <- read.delim(file = "Inputs/Calibrated incidence.txt", header = FALSE)
-  # rearrange for calibration
-  ##TODO:
-  out
+  
+  # rearrange to calibration format
+  inc_mat_to_vector(out)
 }
 
+#############
+# input prep
 
 ethnicity_grps <- c("a","b","c")
 sex_grps <- c("male", "female")
@@ -47,10 +56,21 @@ groups_mat <-
               ethnicity = ethnicity_grps,
               time = inc_years)
 
-group_names <- do.call(paste, groups_mat)
+groups_out <- do.call(paste, groups_mat)
 
-n_grps <- nrow(groups_mat)
-ranges <- rep(list(c(0, 1)), n_grps)
+n_grps_out <- length(groups_out)
+
+groups_in_mat <-
+  expand.grid(age_grp = age_grps,
+              sexbeh = sexbeh_grps,
+              sex = sex_grps,
+              ethnicity = ethnicity_grps)
+
+groups_in <- do.call(paste, groups_in_mat)
+
+n_grps_in <- length(groups_in)
+ranges_in <- rep(list(c(0, 1)), n_grps_in) |> 
+  setNames(groups_in)
 
 # calibration targets
 
@@ -60,43 +80,53 @@ targets_dat <-
 
 # convert to vector
 target_val <- data.frame(
-  val = c(t(as.matrix(targets_dat))),
+  val = inc_mat_to_vector(targets_dat),
   sigma = 0.1)
 
 # convert to list
 targets <-
   split(target_val, 1:nrow(target_val)) |> 
-  setNames(group_names) |> 
+  setNames(groups_out) |> 
   map(as.list)
 
+# n_sim <- n_grps_in*10
+n_sim <- 2
+
 # latin hypercube design
-lhs_points <- lhs::maximinLHS(n_grps*10, n_grps)
+# cols: parameters
+lhs_points <- lhs::maximinLHS(n_sim, n_grps_in)
 
 # rescale
 initial_points <- lhs_points
-for (i in 1:n_grps) {
-  initial_points[, i] <- lhs_points[, i]*ranges[[i]][2]
+for (i in 1:n_grps_in) {
+  rdiff <- ranges_in[[i]][2] - ranges_in[[i]][2]
+  initial_points[, i] <- lhs_points[, i]*ranges_in[[i]][2] + rdiff 
 }
 
-
 # test for single input
-initial_results[[i]] <- get_results(initial_points[i, ])
+# initial_results <- get_results(initial_points[i, ])
 
-# initial values
-wave0 <- cbind(initial_points, initial_results)
+initial_results <- t(apply(initial_points, 1, get_results))
 
-
+# all initial values
+wave0 <- cbind(initial_points, initial_results) |> 
+  `colnames<-`(c(groups_in, groups_out))
 
 
 ###########
 # emulator
 
+library(hmer)
+
 ##TODO:...
 
 ## first wave
 
-ems_wave1 <- emulator_from_data(wave0, names(targets), ranges, 
-                                specified_priors = list(hyper_p = rep(0.55, length(targets))))
+ems_wave1 <-
+  emulator_from_data(input_data = wave0,
+                     output_names = names(targets),
+                     ranges = ranges_in, 
+                     specified_priors = list(hyper_p = rep(0.55, length(targets))))
 
 emulator_plot(ems_wave1$R200, params = c('beta1', 'gamma'))
 
@@ -135,8 +165,10 @@ emulator_plot(ems_wave1_linear$I200, plot_type = 'var',
 emulator_plot(ems_wave1_linear$I200, plot_type = 'imp', targets = targets, 
               params = c('beta1', 'gamma'), cb=TRUE)
 
-ems_wave1_linear$I200 <- ems_wave1_linear$I20$set_hyperparams(
-  list(theta=ems_wave1_linear$I200$corr$hyper_p$theta *3))
+ems_wave1_linear$I200 <-
+  ems_wave1_linear$I20$set_hyperparams(
+    list(theta=ems_wave1_linear$I200$corr$hyper_p$theta *3))
+
 emulator_plot(ems_wave1_linear$I200, plot_type = 'var', 
               params = c('beta1', 'gamma'))
 
@@ -144,3 +176,11 @@ emulator_plot(ems_wave1_linear$I200, plot_type = 'imp', targets = targets,
               params = c('beta1', 'gamma'), cb=TRUE)
 
 wave_points(list(initial_points, new_points, new_new_points), input_names = names(ranges), p_size=1)
+
+# Emulator diagnostics
+
+vd <- validation_diagnostics(ems_wave1$R200, validation = validation, targets = targets, plt=TRUE)
+
+sigmadoubled_emulator <- ems_wave1$R200$mult_sigma(2)
+vd <- validation_diagnostics(sigmadoubled_emulator, 
+                             validation = validation, targets = targets, plt=TRUE)
