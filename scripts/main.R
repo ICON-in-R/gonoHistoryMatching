@@ -5,12 +5,12 @@
 Rcpp::compileAttributes()
 
 library(dplyr)
+library(purrr)
 library(Rcpp)
 
 sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 
 res <- runmodel()
-
 
 # original values
 calib_params <- c(0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0,
@@ -33,13 +33,23 @@ get_results <- function(input) {
   out
 }
 
-# inputs
-# transmission rates:
-#   race 3
-#   gender 2
-#   sexual behaviour 3
 
-n_grps <- 3*2*3
+ethnicity_grps <- c("a","b","c")
+sex_grps <- c("male", "female")
+sexbeh_grps <- c("heterosexual", "homosexual", "bisexual")
+age_grps <- c(0,1,2,3)
+inc_years <- 2017:2021
+
+groups_mat <-
+  expand.grid(age_grp = age_grps,
+              sexbeh = sexbeh_grps,
+              sex = sex_grps,
+              ethnicity = ethnicity_grps,
+              time = inc_years)
+
+group_names <- do.call(paste, groups_mat)
+
+n_grps <- nrow(groups_mat)
 ranges <- rep(list(c(0, 1)), n_grps)
 
 # calibration targets
@@ -48,12 +58,16 @@ targets_dat <-
   read.delim("Inputs/Calibration targets.txt", sep = "\t", header = FALSE) |> 
   select_if(~ !any(is.na(.)))
 
-target_val <- c(t(as.matrix(targets_dat))) 
+# convert to vector
+target_val <- data.frame(
+  val = c(t(as.matrix(targets_dat))),
+  sigma = 0.1)
 
-targets <- list()
-for (i in 1:length(target_val)) {
-  targets[[i]] <- list(val = target_val[i], sigma = 0.1)
-}
+# convert to list
+targets <-
+  split(target_val, 1:nrow(target_val)) |> 
+  setNames(group_names) |> 
+  map(as.list)
 
 # latin hypercube design
 lhs_points <- lhs::maximinLHS(n_grps*10, n_grps)
@@ -64,6 +78,8 @@ for (i in 1:n_grps) {
   initial_points[, i] <- lhs_points[, i]*ranges[[i]][2]
 }
 
+
+# test for single input
 initial_results[[i]] <- get_results(initial_points[i, ])
 
 # initial values
