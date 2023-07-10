@@ -134,18 +134,22 @@ targets <- targets[indx_out]
 
 # number of full model simulations
 n_sim <- n_grps_in*10
+n_validation <- 10
 
 # latin hypercube design
 # cols: parameters
 lhs_points <- lhs::maximinLHS(n_sim, n_grps_in)
+lhs_points_validation <- lhs::maximinLHS(n_validation, n_grps_in)
+
+initial_points <- rbind(lhs_points, lhs_points_validation)
 
 # rescale
-initial_points <- lhs_points
 for (i in 1:n_grps_in) {
   rdiff <- ranges_in[[i]][2] - ranges_in[[i]][2]
-  initial_points[, i] <- lhs_points[, i]*ranges_in[[i]][2] + rdiff 
+  initial_points[, i] <- initial_points[, i]*ranges_in[[i]][2] + rdiff 
 }
 
+  
 #################
 # run full model
 
@@ -164,6 +168,18 @@ wave0 <-
 save(wave0, file = "Outputs/wave0.RData")
 
 
+# output with known inputs
+targets_fake <-
+  purrr::map(1:8, ~list(val = 1000,
+                        sigma = 100)) |> 
+  setNames(groups_out)
+
+# validation set
+for (i in 1:n_grps_out) {
+  targets_fake[[i]] <- list(val = initial_results[1,i],
+                            sigma = 200)
+}
+
 ###########
 # emulator
 
@@ -174,10 +190,13 @@ library(hmer)
 
 # load("Outputs/wave0.RData")
 
+training <- wave0[1:n_sim, ]
+validation <- wave0[(n_sim+1):nrow(wave0), ]
+
 ## first wave
 
 ems_wave1 <-
-  emulator_from_data(input_data = wave0,
+  emulator_from_data(input_data = training,
                      output_names = names(targets),
                      ranges = ranges_in,
                      emulator_type = "deterministic",
@@ -198,19 +217,31 @@ emulator_plot(ems_wave1$a0heterosexualmalee1y2017, plot_type = 'var')
 
 summary(ems_wave1$a0heterosexualmalee1y2017$model)$adj.r.squared
 
+## calibrations plots
+
 emulator_plot(ems_wave1$a0heterosexualmalee1y2017, plot_type = 'imp',
               targets = targets, cb=TRUE)
 
 # implausibility >3 unlikely to give a good fit
-emulator_plot(ems_wave1, plot_type = 'imp', 
-              targets = targets, cb=TRUE)
-emulator_plot(ems_wave1, plot_type = 'nimp', 
-              targets = targets, cb=TRUE)
+emulator_plot(ems_wave1, plot_type = 'imp', targets = targets, cb=TRUE)
+emulator_plot(ems_wave1, plot_type = 'nimp', targets = targets, cb=TRUE)  # maximum implausibility
 
 space_removed(ems_wave1, targets, ppd=3) +
   geom_vline(xintercept = 3, lty = 2) + 
   geom_text(aes(x=3, label="x = 3",y=0.33), colour="black", 
             angle=90, vjust = 1.2, text=element_text(size=11))
+
+# fake target data
+emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE)
+emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE,
+              params = c('a1heterosexualmalee1', 'a2heterosexualmalee1'))
+emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE,
+              params = c('a2heterosexualmalee1', 'a3heterosexualmalee1'))
+
+##TODO:
+vd <- validation_diagnostics(ems_wave1$a3heterosexualmalee1y2017,
+                             validation = validation, targets = targets)#, plt=TRUE)
+
 
 ## second wave
 
