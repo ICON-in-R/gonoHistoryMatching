@@ -167,7 +167,6 @@ wave0 <-
 
 save(wave0, file = "Outputs/wave0.RData")
 
-
 # output with known inputs
 targets_fake <-
   purrr::map(1:8, ~list(val = 1000,
@@ -228,7 +227,7 @@ emulator_plot(ems_wave1, plot_type = 'nimp', targets = targets, cb=TRUE)  # maxi
 
 space_removed(ems_wave1, targets, ppd=3) +
   geom_vline(xintercept = 3, lty = 2) + 
-  geom_text(aes(x=3, label="x = 3",y=0.33), colour="black", 
+  geom_text(aes(x=3, label="x = 3", y=0.33), colour="black", 
             angle=90, vjust = 1.2, text=element_text(size=11))
 
 # fake target data
@@ -237,11 +236,6 @@ emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE,
               params = c('a1heterosexualmalee1', 'a2heterosexualmalee1'))
 emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE,
               params = c('a2heterosexualmalee1', 'a3heterosexualmalee1'))
-
-##TODO:
-vd <- validation_diagnostics(ems_wave1$a3heterosexualmalee1y2017,
-                             validation = validation, targets = targets)#, plt=TRUE)
-
 
 ## second wave
 
@@ -277,8 +271,10 @@ wave_points(list(initial_points, new_points, new_new_points), input_names = name
 
 # Emulator diagnostics
 
-vd <- validation_diagnostics(ems_wave1$R200, validation = validation, targets = targets, plt=TRUE)
+##TODO: errors
+vd <- validation_diagnostics(ems_wave1$a3heterosexualmalee1y2017,
+                             validation = validation, targets = targets)#, plt=TRUE)
 
-sigmadoubled_emulator <- ems_wave1$R200$mult_sigma(2)
+sigmadoubled_emulator <- ems_wave1$a0heterosexualmalee1y2017$mult_sigma(2)
 vd <- validation_diagnostics(sigmadoubled_emulator, 
                              validation = validation, targets = targets, plt=TRUE)
