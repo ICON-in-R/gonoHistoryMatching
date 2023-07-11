@@ -14,12 +14,6 @@ sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 
 res <- runmodel()
 
-# original values for testing
-calib_params <-
-  c(0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0,
-    0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0,
-    0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0.022,0,0,0,0,0,0,0,0)
-
 # incidence matrix to vector format
 inc_mat_to_vector <- function(x) {
   x_na <- x[ , colSums(is.na(x)) == 0]
@@ -64,9 +58,12 @@ test_get_results <- function(input,
 #   targets: output calibration central values and sd
 
 # subset vector
-indx_in <- c(1,2,3,4)
+indx_in <- c(1,2,3,4,       # male
+             13,14,15,16)   # female
 indx_out <- c(1,2,3,4,      # 2017
-              73,74,75,76)  # 2018
+              13,14,15,16,
+              73,74,75,76,  # 2018
+              85,86,87,88)
 
 ethnicity_grps <- paste0("e", 1:3)
 sex_grps <- c("male", "female")
@@ -121,7 +118,7 @@ targets_dat <-
 # convert to vector
 target_val <- data.frame(
   val = inc_mat_to_vector(targets_dat)) |> 
-  mutate(sigma = val/500 + 0.1)            ##TODO: this is arbitrary atm
+  mutate(sigma = val/200 + 0.1)            ##TODO: this is arbitrary atm
 
 # convert to list
 targets <-
@@ -134,14 +131,16 @@ targets <- targets[indx_out]
 
 # number of full model simulations
 n_sim <- n_grps_in*10
-n_validation <- 10
+n_validation <- n_grps_in
 
 # latin hypercube design
 # cols: parameters
 lhs_points <- lhs::maximinLHS(n_sim, n_grps_in)
 lhs_points_validation <- lhs::maximinLHS(n_validation, n_grps_in)
 
-initial_points <- rbind(lhs_points, lhs_points_validation)
+initial_points <-
+  rbind(lhs_points, lhs_points_validation) |> 
+  `colnames<-`(groups_in)
 
 # rescale
 for (i in 1:n_grps_in) {
@@ -169,11 +168,12 @@ save(wave0, file = "Outputs/wave0.RData")
 
 # output with known inputs
 targets_fake <-
-  purrr::map(1:8, ~list(val = 1000,
-                        sigma = 100)) |> 
+  purrr::map(1:n_grps_out,
+             ~list(val = 1000,
+                   sigma = 100)) |> 
   setNames(groups_out)
 
-# validation set
+# single validation set
 for (i in 1:n_grps_out) {
   targets_fake[[i]] <- list(val = initial_results[1,i],
                             sigma = 200)
@@ -184,8 +184,6 @@ for (i in 1:n_grps_out) {
 
 library(ggplot2)
 library(hmer)
-
-##TODO:...
 
 # load("Outputs/wave0.RData")
 
@@ -199,8 +197,8 @@ ems_wave1 <-
                      output_names = names(targets),
                      ranges = ranges_in,
                      emulator_type = "deterministic",
-                     order = 1,
-                     specified_priors = list(hyper_p = rep(0.55, length(targets))))
+                     order = 2) #,
+                     # specified_priors = list(hyper_p = rep(0.55, length(targets))))
 
 save(ems_wave1, file = "Outputs/ems_wave1.RData")
 
@@ -237,43 +235,49 @@ emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE,
 emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE,
               params = c('a2heterosexualmalee1', 'a3heterosexualmalee1'))
 
-## second wave
+##############
+# second wave
 
-ems_wave1_linear <-
-  emulator_from_data(training, names(targets), 
-                     ranges, quadratic = FALSE,
-                     specified_priors = list(hyper_p = rep(0.55, length(targets))))
+new_points <- generate_new_design(ems_wave1, 180, targets, verbose=TRUE)
 
-R_squared_linear <- list()
-for (i in 1:length(ems_wave1_linear)) {
-  R_squared_linear[[i]] <- summary(ems_wave1_linear[[i]]$model)$adj.r.squared
-}
-names(R_squared_linear) <- names(ems_wave1_linear)
-unlist(R_squared_linear)
+plot_wrap(new_points, ranges = ranges_in)
 
-emulator_plot(ems_wave1_linear$I200, plot_type = 'var', 
-              params = c())
+new_initial_results <- t(apply(new_points, 1,
+                               test_get_results, indx_in = indx_in, indx_out = indx_out))
 
-emulator_plot(ems_wave1_linear$I200, plot_type = 'imp', targets = targets, 
-              params = c(), cb = TRUE)
+wave1 <- cbind(new_points, new_initial_results)
 
-ems_wave1_linear$I200 <-
-  ems_wave1_linear$I20$set_hyperparams(
-    list(theta=ems_wave1_linear$I200$corr$hyper_p$theta *3))
+new_training <- wave1[1:n_sample, ]
+new_validation <- wave1[(n_sample+1):nrow(wave1), ]
 
-emulator_plot(ems_wave1_linear$I200, plot_type = 'var', 
-              params = c())
+ems_wave2 <- emulator_from_data(input_data = new_training,
+                                output_names = names(targets),
+                                ranges = ranges_in,
+                                emulator_type = "deterministic",
+                                order = 2)
 
-emulator_plot(ems_wave1_linear$I200, plot_type = 'imp', targets = targets, 
-              params = c(), cb=TRUE)
+vd <- validation_diagnostics(ems_wave2, validation = new_validation, targets = targets, 
+                             plt=TRUE)
 
-wave_points(list(initial_points, new_points, new_new_points), input_names = names(ranges), p_size=1)
+# inflate sigma for better fit
+ems_wave1_mult_sigma <- ems_wave2$a0heterosexualmalee1y2017$mult_sigma(2)
+
+new_new_points <- generate_new_design(c(ems_wave2, ems_wave1), 180, targets, verbose=TRUE)
+
+plot_wrap(new_new_points, ranges = ranges_in)
+
+##TODO: error
+wave_points(list(initial_points, new_points), input_names = names(ranges_in), p_size=1)
+
+all_points <- list(wave0, wave1, wave2)
+wave_values(all_points, targets, l_wid=1, p_size=1)
+
 
 # Emulator diagnostics
 
 ##TODO: errors
-vd <- validation_diagnostics(ems_wave1$a3heterosexualmalee1y2017,
-                             validation = validation, targets = targets)#, plt=TRUE)
+vd <- validation_diagnostics(ems_wave1,
+                             validation = validation[-8,], targets = targets, plt=TRUE)
 
 sigmadoubled_emulator <- ems_wave1$a0heterosexualmalee1y2017$mult_sigma(2)
 vd <- validation_diagnostics(sigmadoubled_emulator, 
