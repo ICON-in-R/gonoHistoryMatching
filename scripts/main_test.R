@@ -1,6 +1,8 @@
 
 # gonorrhoea transmission dynamic infectious disease model
 # history matching calibration using C++ code
+# input: transmission rate
+# output: incidence counts
 # https://danny-sc.github.io/determ_workshop/
 # this is a simplified data testing script
 
@@ -16,24 +18,25 @@ res <- runmodel()
 
 # incidence matrix to vector format
 inc_mat_to_vector <- function(x) {
-  x_na <- x[ , colSums(is.na(x)) == 0]
+  x_na <- x[, colSums(is.na(x)) == 0]
   # stack years
   c(as.matrix(x_na))
 }
 
-#' DTM helper for testing 
+#' DTM helper for testing subset of inputs/outputs
 #' 
-#' only change a subset of the input calibration parameters
+#' Only change a subset of the input calibration parameters
 #' and return a subset of the output values
 #' for the same groups e.g. age group 1, sexbeh homosexual etc
 #' 
-#' @param input transmission rates, same length as indx
-#' @param indx_in subset input vector index; integer
-#' @param indx_out subset output vector index; integer
-#' @value incidence by group
+#' @param input transmission rates, same length as indx_in
+#' @param indx_in subset of total input vector index; integer vector
+#' @param indx_out subset of total output vector index; integer vector
+#' 
+#' @return incidence by group
 #' @examples
 #' out <- test_get_results(input = c(0.03, 0.03, 0.03))
-#' 
+#'
 test_get_results <- function(input,
                              indx_in = c(1,2,3,4),
                              indx_out = c(1,2,3,4)) {
@@ -53,9 +56,9 @@ test_get_results <- function(input,
 # input group prep
 
 # create for emulator
-#   wave0: data of inputs and outputs from full model
-#   ranges_in: upper and lower limits for inputs
-#   targets: output calibration central values and sd
+#   - wave0: data of inputs and outputs from full model
+#   - ranges_in: upper and lower limits for transmission rates
+#   - targets: incidence output calibration central values and sd
 
 # subset vector
 indx_in <- c(1,2,3,4,       # male
@@ -71,7 +74,7 @@ sexbeh_grps <- c("heterosexual", "homosexual", "bisexual")
 age_grps <-  paste0("a", 0:3)
 inc_years <- paste0("y", 2017:2021)
 
-# all combinations of output covariates
+# all combinations of _output_ covariates
 groups_mat <-
   expand.grid(age_grp = age_grps,
               sexbeh = sexbeh_grps,
@@ -79,7 +82,7 @@ groups_mat <-
               ethnicity = ethnicity_grps,
               time = inc_years)
 
-# vector of all group names
+# vector of all output group names
 full_groups_out <- do.call(paste0, groups_mat)
 
 # subset parameters and data for testing
@@ -87,7 +90,7 @@ groups_out <- full_groups_out[indx_out]
 
 n_grps_out <- length(groups_out)
 
-# all combinations of input covariates
+# all combinations of _input_ covariates
 # without year
 groups_in_mat <-
   expand.grid(age_grp = age_grps,
@@ -95,6 +98,7 @@ groups_in_mat <-
               sex = sex_grps,
               ethnicity = ethnicity_grps)
 
+# vector of all input group names
 full_groups_in <- do.call(paste0, groups_in_mat)
 
 # subset parameters and data for testing
@@ -102,7 +106,7 @@ groups_in <- full_groups_in[indx_in]
 
 n_grps_in <- length(groups_in)
 
-# upper and lower limits for inputs
+# upper and lower limits for transmission rates
 ##TODO: what upper limit?
 ranges_in <- 
   rep(list(c(0, 0.1)), n_grps_in) |> 
@@ -111,23 +115,25 @@ ranges_in <-
 #############################
 # create calibration targets
 
+# incidence group by year
 targets_dat <-
   read.delim("Inputs/Calibration targets.txt", sep = "\t", header = FALSE) |> 
   select_if(~ !any(is.na(.)))
 
 # convert to vector
+# mean and standard deviation
 target_val <- data.frame(
   val = inc_mat_to_vector(targets_dat)) |> 
   mutate(sigma = val/200 + 0.1)            ##TODO: this is arbitrary atm
 
-# convert to list
-targets <-
+# convert to named list
+all_targets <-
   split(target_val, 1:nrow(target_val)) |> 
   setNames(full_groups_out) |> 
   map(as.list)
 
 # subset parameters and data for testing
-targets <- targets[indx_out]
+targets <- all_targets[indx_out]
 
 # number of full model simulations
 n_sim <- n_grps_in*10
@@ -138,6 +144,7 @@ n_validation <- n_grps_in
 lhs_points <- lhs::maximinLHS(n_sim, n_grps_in)
 lhs_points_validation <- lhs::maximinLHS(n_validation, n_grps_in)
 
+# all LHS inputs
 initial_points <-
   rbind(lhs_points, lhs_points_validation) |> 
   `colnames<-`(groups_in)
@@ -148,17 +155,20 @@ for (i in 1:n_grps_in) {
   initial_points[, i] <- initial_points[, i]*ranges_in[[i]][2] + rdiff 
 }
 
-  
+
 #################
 # run full model
 
 # test for single input
-# initial_results <- test_get_results(initial_points[i, ], indx_in, indx_out)
+if (FALSE) {
+  initial_results <- test_get_results(initial_points[i, ], indx_in, indx_out)
+}
 
+# run model for all LHS inputs
 initial_results <- t(apply(initial_points, 1,
                            test_get_results, indx_in = indx_in, indx_out = indx_out))
 
-# all initial values
+# all named initial inputs and outputs
 wave0 <-
   cbind(initial_points, initial_results) |> 
   `colnames<-`(c(groups_in, groups_out)) |> 
@@ -166,16 +176,18 @@ wave0 <-
 
 save(wave0, file = "Outputs/wave0.RData")
 
-# output with known inputs
+# output incidence with known inputs
+# so can check calibration against
 targets_fake <-
   purrr::map(1:n_grps_out,
              ~list(val = 1000,
                    sigma = 100)) |> 
   setNames(groups_out)
 
-# single validation set
+# or
+# single validation set list of outputs
 for (i in 1:n_grps_out) {
-  targets_fake[[i]] <- list(val = initial_results[1,i],
+  targets_fake[[i]] <- list(val = initial_results[1, i],
                             sigma = 200)
 }
 
@@ -188,6 +200,7 @@ library(hmer)
 
 # load("Outputs/wave0.RData")
 
+# split data set
 training <- wave0[1:n_sim, ]
 validation <- wave0[(n_sim+1):nrow(wave0), ]
 
@@ -195,18 +208,20 @@ validation <- wave0[(n_sim+1):nrow(wave0), ]
 # first wave
 
 ems_wave1 <-
-  emulator_from_data(input_data = training,
+  emulator_from_data(input_data = training,            # named inputs and outputs from full model
                      output_names = names(targets),
-                     ranges = ranges_in,
+                     range = ranges_in,               # min, max inputs
                      emulator_type = "deterministic",
-                     order = 2) #,
-                     # specified_priors = list(hyper_p = rep(0.55, length(targets))))
+                     order = 2) #,                     # of regression 
+# specified_priors = list(hyper_p = rep(0.55, length(targets))))
 
 save(ems_wave1, file = "Outputs/ems_wave1.RData")
 
+# contour plot of pair of input parameters
 emulator_plot(ems_wave1$a0heterosexualmalee1y2017)
 emulator_plot(ems_wave1$a1heterosexualmalee1y2017)
 emulator_plot(ems_wave1$a2heterosexualmalee1y2017)
+emulator_plot(ems_wave1$a3heterosexualmalee1y2017)
 
 # input-output grid
 plot_actives(ems_wave1)
@@ -227,8 +242,8 @@ emulator_plot(ems_wave1, plot_type = 'nimp', targets = targets, cb=TRUE)  # maxi
 
 space_removed(ems_wave1, targets, ppd=3) +
   geom_vline(xintercept = 3, lty = 2) + 
-  geom_text(aes(x=3, label="x = 3", y=0.33), colour="black", 
-            angle=90, vjust = 1.2, text=element_text(size=11))
+  geom_text(aes(x=3, label="x = 3", y=0.33),
+            colour="black", angle=90, vjust = 1.2, text=element_text(size=11))
 
 # fake target data
 emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE)
@@ -250,7 +265,7 @@ vd <- validation_diagnostics(sigmadoubled_emulator,
 ##############
 # second wave
 
-new_points <- generate_new_design(ems_wave1, 180, targets, verbose=TRUE)
+new_points <- generate_new_design(ems_wave1, 180, targets, verbose = TRUE)
 
 plot_wrap(new_points, ranges = ranges_in)
 
@@ -269,12 +284,12 @@ ems_wave2 <- emulator_from_data(input_data = new_training,
                                 order = 2)
 
 vd <- validation_diagnostics(ems_wave2, validation = new_validation, targets = targets, 
-                             plt=TRUE)
+                             plt = TRUE)
 
 # inflate sigma for better fit
 ems_wave1_mult_sigma <- ems_wave2$a0heterosexualmalee1y2017$mult_sigma(2)
 
-new_new_points <- generate_new_design(c(ems_wave2, ems_wave1), 180, targets, verbose=TRUE)
+new_new_points <- generate_new_design(c(ems_wave2, ems_wave1), 180, targets, verbose = TRUE)
 
 plot_wrap(new_new_points, ranges = ranges_in)
 
@@ -286,3 +301,10 @@ wave_values(all_points, targets, l_wid=1, p_size=1)
 
 
 
+##TODO: errors
+vd <- validation_diagnostics(ems_wave1,
+                             validation = validation[-8, ], targets = targets, plt = TRUE)
+
+sigmadoubled_emulator <- ems_wave1$a0heterosexualmalee1y2017$mult_sigma(2)
+vd <- validation_diagnostics(sigmadoubled_emulator, 
+                             validation = validation, targets = targets, plt = TRUE)
