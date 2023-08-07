@@ -181,6 +181,7 @@ for (i in 1:n_grps_out) {
 
 ###########
 # emulator
+###########
 
 library(ggplot2)
 library(hmer)
@@ -190,7 +191,8 @@ library(hmer)
 training <- wave0[1:n_sim, ]
 validation <- wave0[(n_sim+1):nrow(wave0), ]
 
-## first wave
+#############
+# first wave
 
 ems_wave1 <-
   emulator_from_data(input_data = training,
@@ -235,6 +237,16 @@ emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE,
 emulator_plot(ems_wave1, plot_type = 'imp', targets = targets_fake, cb=TRUE,
               params = c('a2heterosexualmalee1', 'a3heterosexualmalee1'))
 
+# Emulator diagnostics
+
+##TODO: errors
+vd <- validation_diagnostics(ems_wave1,
+                             validation = validation[-8,], targets = targets, plt=TRUE)
+
+sigmadoubled_emulator <- ems_wave1$a0heterosexualmalee1y2017$mult_sigma(2)
+vd <- validation_diagnostics(sigmadoubled_emulator, 
+                             validation = validation, targets = targets, plt=TRUE)
+
 ##############
 # second wave
 
@@ -273,12 +285,4 @@ all_points <- list(wave0, wave1, wave2)
 wave_values(all_points, targets, l_wid=1, p_size=1)
 
 
-# Emulator diagnostics
 
-##TODO: errors
-vd <- validation_diagnostics(ems_wave1,
-                             validation = validation[-8,], targets = targets, plt=TRUE)
-
-sigmadoubled_emulator <- ems_wave1$a0heterosexualmalee1y2017$mult_sigma(2)
-vd <- validation_diagnostics(sigmadoubled_emulator, 
-                             validation = validation, targets = targets, plt=TRUE)
