@@ -156,14 +156,14 @@ lhs_points <- lhs::maximinLHS(n_sim, n_grps_in)
 lhs_points_validation <- lhs::maximinLHS(n_validation, n_grps_in)
 
 # all LHS inputs
-initial_points <-
+init_points <-
   rbind(lhs_points, lhs_points_validation) |> 
   `colnames<-`(groups_in)
 
 # rescale
 for (i in 1:n_grps_in) {
   rdiff <- ranges_in[[i]][2] - ranges_in[[i]][2]
-  initial_points[, i] <- initial_points[, i]*ranges_in[[i]][2] + rdiff 
+  init_points[, i] <- init_points[, i]*ranges_in[[i]][2] + rdiff 
 }
 
 
@@ -172,20 +172,21 @@ for (i in 1:n_grps_in) {
 
 # test for single input
 if (FALSE) {
-  initial_results <- test_get_results(initial_points[i, ], indx_in, indx_out)
+  init_results <- test_get_results(init_points[i, ], indx_in, indx_out)
 }
 
 # run model for all LHS inputs
-initial_results <- t(apply(initial_points, 1,
-                           test_get_results, indx_in = indx_in, indx_out = indx_out))
+init_results <- t(apply(init_points, 1,
+                        test_get_results, indx_in = indx_in, indx_out = indx_out))
 
 # all named initial inputs and outputs
 wave0 <-
-  cbind(initial_points, initial_results) |> 
+  cbind(init_points, init_results) |> 
   `colnames<-`(c(groups_in, groups_out)) |> 
   as.data.frame()
 
-save(wave0, file = "Outputs/wave0.RData")
+if (FALSE)
+  save(wave0, file = "Outputs/wave0.RData")
 
 # # output incidence with known inputs
 # # so can check calibration against
@@ -198,7 +199,7 @@ save(wave0, file = "Outputs/wave0.RData")
 # # or
 # # single validation set list of outputs
 # for (i in 1:n_grps_out) {
-#   targets_fake[[i]] <- list(val = initial_results[1, i],
+#   targets_fake[[i]] <- list(val = init_results[1, i],
 #                             sigma = 200)
 # }
 
@@ -254,6 +255,9 @@ emulator_plot(ems_wave1$a0heterosexualmalee1y2017, plot_type = 'imp',
               targets = targets, cb=TRUE)
 
 emulator_plot(ems_wave1, plot_type = 'imp', targets = targets, cb=TRUE)
+emulator_plot(ems_wave1, params = c("a0heterosexualmalee1", "a0heterosexualfemalee1"), plot_type = 'imp', targets = targets, cb=TRUE)
+emulator_plot(ems_wave1, params = c("a2heterosexualmalee1", "a2heterosexualfemalee1"), plot_type = 'imp', targets = targets, cb=TRUE)
+
 # nth-maximum implausibility
 emulator_plot(ems_wave1, plot_type = 'nimp', targets = targets, cb=TRUE)  # maximum implausibility
 
@@ -276,56 +280,68 @@ vd <- validation_diagnostics(ems_wave1,
 
 sigmadoubled_emulator <- ems_wave1$a0heterosexualmalee1y2017$mult_sigma(2)
 
-vd <- validation_diagnostics(sigmadoubled_emulator, 
+vd <- validation_diagnostics(sigmadoubled_emulator,
                              validation = validation, targets = targets, plt = TRUE)
 
 ##############
 # second wave
 
-# new_points <- generate_new_design(ems_wave1, 180, targets, verbose = TRUE)  # replace function name?
-new_points <- generate_new_runs(ems_wave1, n_points = 180, targets, verbose = TRUE)
+# wave1_points <- generate_new_design(ems_wave1, 180, targets, verbose = TRUE)  # replace function name?
+wave1_points <- generate_new_runs(ems_wave1, n_points = 60, targets, verbose = TRUE)
 
 # grid of LHS sampled inputs omitting implausible regions
-plot_wrap(new_points, ranges = ranges_in)
+plot_wrap(wave1_points, ranges = ranges_in)
 
 # rerun model for all LHS inputs
-new_initial_results <- t(apply(new_points, 1,
-                               test_get_results, indx_in = indx_in, indx_out = indx_out))
+wave1_init_results <- t(apply(wave1_points, 1,
+                              test_get_results, indx_in = indx_in, indx_out = indx_out)) |> 
+  setNames()
 
-wave1 <- cbind(new_points, new_initial_results)
+wave1 <-
+  cbind(wave1_points, wave1_init_results) |> 
+  `colnames<-`(c(groups_in, groups_out)) |> 
+  as.data.frame()
 
 if (save)
   save(wave1, file = "Outputs/wave1.RData")
 
-new_training <- wave1[1:n_sample, ]
-new_validation <- wave1[(n_sample+1):nrow(wave1), ]
+n_sample <- 90
+wave1_training <- wave1[1:n_sample, ]
+wave1_validation <- wave1[(n_sample+1):nrow(wave1), ]
 
-ems_wave2 <- emulator_from_data(input_data = new_training,
+ems_wave2 <- emulator_from_data(input_data = wave1_training,
                                 output_names = names(targets),
                                 check.ranges = TRUE,           # update for plausible only
                                 ranges = ranges_in,
                                 emulator_type = "deterministic",
                                 order = 2)
 
-# contour plot
+# contour plot after history matching
 emulator_plot(ems_wave2, plot_type = 'imp', targets = targets, cb=TRUE)
+emulator_plot(ems_wave2, params = c("a0heterosexualmalee1", "a0heterosexualfemalee1"), plot_type = 'imp', targets = targets, cb=TRUE)
+emulator_plot(ems_wave2, params = c("a2heterosexualmalee1", "a2heterosexualfemalee1"), plot_type = 'imp', targets = targets, cb=TRUE)
 
-vd <- validation_diagnostics(ems_wave2, validation = new_validation, targets = targets, 
+vd <- validation_diagnostics(ems_wave2, validation = wave1_validation, targets = targets, 
                              plt = TRUE)
 
 # inflate sigma for better fit
-ems_wave1_mult_sigma <- ems_wave2$a0heterosexualmalee1y2017$mult_sigma(2)
+ems_wave2_mult_sigma <- ems_wave2$a0heterosexualmalee1y2017$mult_sigma(2)
 
-new_new_points <- generate_new_runs(c(ems_wave2, ems_wave1), 180, targets, verbose = TRUE)
+vd <- validation_diagnostics(ems_wave2_mult_sigma, validation = wave1_validation, targets = targets, 
+                             plt = TRUE)
 
-plot_wrap(new_new_points, ranges = ranges_in)
+# wave2_points <- generate_new_runs(c(ems_wave2, ems_wave1), 60, targets, verbose = TRUE)
+wave2_points <- generate_new_runs(ems_wave2, 60, targets, verbose = TRUE)
 
-# Visualisations of non-implausible space by wave
+plot_wrap(wave2_points, ranges = ranges_in)
+
+# visualisations of non-implausible space by wave
 ##TODO: error
-wave_points(list(initial_points, new_points, new_new_points), input_names = names(ranges_in), p_size=1)
+all_points <- list(init_points, wave1_points, wave2_points)
+wave_points(all_points, input_names = names(ranges_in), p_size=1)
 
-all_points <- list(wave0, wave1, wave2)
-wave_values(all_points, targets, l_wid=1, p_size=1)
+all_waves <- list(wave0, wave1, wave2)
+wave_values(all_waves, targets, l_wid=1, p_size=1)
 
 
 
