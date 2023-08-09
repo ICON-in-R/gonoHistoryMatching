@@ -21,22 +21,26 @@ load("../Outputs/ems_wave1.RData")
 ```
 
 Contour plot of pair of input parameters
+
 ```{r}
 emulator_plot(ems_wave1$a0heterosexualmalee1y2017)
 emulator_plot(ems_wave1$a1heterosexualmalee1y2017)
 ```
 
 Input-output grid
+
 ```{r}
 plot_actives(ems_wave1)
 ```
 
 Variance
+
 ```{r}
 emulator_plot(ems_wave1$a0heterosexualmalee1y2017, plot_type = 'var')
 ```
 
-Implausibility >3 unlikely to give a good fit
+Implausibility \>3 unlikely to give a good fit
+
 ```{r eval=FALSE}
 emulator_plot(ems_wave1, plot_type = 'imp', targets = targets, cb=TRUE)
 ```
