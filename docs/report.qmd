@@ -6,7 +6,7 @@ editor: visual
 
 ## Introduction
 
-FAQ https://cran.r-project.org/web/packages/hmer/vignettes/emulationhandbook.html
+[FAQ](https://cran.r-project.org/web/packages/hmer/vignettes/emulationhandbook.html)
 
 ## Results
 
@@ -14,33 +14,46 @@ FAQ https://cran.r-project.org/web/packages/hmer/vignettes/emulationhandbook.htm
 library(hmer)
 ```
 
-### First wave
+### Load data
+
+```{r}
+load("../Outputs/init_points.RData")
+load("../Outputs/wave1_points.RData")
+load("../Outputs/wave2_points.RData")
+```
+
+```{r}
+load("../Outputs/wave0.RData")
+load("../Outputs/wave1.RData")
+```
 
 ```{r}
 load("../Outputs/ems_wave1.RData")
+load("../Outputs/ems_wave2.RData")
 ```
-
-Contour plot of pair of input parameters
 
 ```{r}
-emulator_plot(ems_wave1$a0heterosexualmalee1y2017)
-emulator_plot(ems_wave1$a1heterosexualmalee1y2017)
+load("../Outputs/targets.RData")
 ```
 
-Input-output grid
+# Visualisations of non-implausible space by wave
+
+```{r}
+all_points <- list(as.data.frame(init_points), wave1_points, wave2_points)
+wave_points(all_points, input_names = colnames(wave1_points), p_size=1, zero_in = TRUE)
+```
+
+```{r}
+all_waves <- list(wave0, wave1) #, wave2)
+wave_values(all_waves, targets, l_wid=1, p_size=1)
+```
+
+```{r}
+behaviour_plot(ems_wave1, targets = targets)
+behaviour_plot(ems_wave2, targets = targets)
+```
 
 ```{r}
 plot_actives(ems_wave1)
-```
-
-Variance
-
-```{r}
-emulator_plot(ems_wave1$a0heterosexualmalee1y2017, plot_type = 'var')
-```
-
-Implausibility \>3 unlikely to give a good fit
-
-```{r eval=FALSE}
-emulator_plot(ems_wave1, plot_type = 'imp', targets = targets, cb=TRUE)
+plot_actives(ems_wave2)
 ```

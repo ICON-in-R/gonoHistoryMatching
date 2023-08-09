@@ -145,6 +145,9 @@ all_targets <-
 # subset parameters and data for testing
 targets <- all_targets[indx_out]
 
+if (save)
+  save(targets, file = "Outputs/targets.RData")
+
 # number of full model simulations
 n_sim <- n_grps_in*10
 n_validation <- n_grps_in
@@ -166,6 +169,8 @@ for (i in 1:n_grps_in) {
   init_points[, i] <- init_points[, i]*ranges_in[[i]][2] + rdiff 
 }
 
+if (save)
+  save(init_points, file = "Outputs/init_points.RData")
 
 #################
 # run full model
@@ -246,7 +251,7 @@ plot_actives(ems_wave1)
 # variance
 emulator_plot(ems_wave1$a0heterosexualmalee1y2017, plot_type = 'var')
 
-#
+# R^2 statistic
 summary(ems_wave1$a0heterosexualmalee1y2017$model)$adj.r.squared
 
 ## calibrations plots
@@ -285,8 +290,6 @@ sigmadoubled_emulator <- ems_wave1$a0heterosexualmalee1y2017$mult_sigma(2)
 vd <- validation_diagnostics(sigmadoubled_emulator,
                              validation = validation, targets = targets, plt = TRUE)
 
-# Emulator diagnostics
-
 ##TODO: errors
 vd <- validation_diagnostics(ems_wave1,
                              validation = validation[-8,], targets = targets, plt=TRUE)
@@ -298,26 +301,29 @@ vd <- validation_diagnostics(sigmadoubled_emulator,
 ##############
 # second wave
 
-# wave1_points <- generate_new_design(ems_wave1, 180, targets, verbose = TRUE)  # replace function name?
-wave1_points <- generate_new_runs(ems_wave1, n_points = 60, targets, verbose = TRUE)
+wave1_points <- generate_new_design(ems_wave1, 60, targets, verbose = TRUE)
+# wave1_points <- generate_new_runs(ems_wave1, n_points = 60, targets, verbose = TRUE)
+
+if (save)
+  save(wave1_points, file = "Outputs/wave1_points.RData")
 
 # grid of LHS sampled inputs omitting implausible regions
 plot_wrap(wave1_points, ranges = ranges_in)
 
 # rerun model for all LHS inputs
-wave1_init_results <- t(apply(wave1_points, 1,
-                              test_get_results, indx_in = indx_in, indx_out = indx_out)) |> 
-  setNames()
+wave1_results <- t(apply(wave1_points, 1,
+                         test_get_results, indx_in = indx_in, indx_out = indx_out)) #|> 
+  # setNames()
 
 wave1 <-
-  cbind(wave1_points, wave1_init_results) |> 
+  cbind(wave1_points, wave1_results) |> 
   `colnames<-`(c(groups_in, groups_out)) |> 
   as.data.frame()
 
 if (save)
   save(wave1, file = "Outputs/wave1.RData")
 
-n_sample <- 90
+n_sample <- 50
 wave1_training <- wave1[1:n_sample, ]
 wave1_validation <- wave1[(n_sample+1):nrow(wave1), ]
 
@@ -327,6 +333,8 @@ ems_wave2 <- emulator_from_data(input_data = wave1_training,
                                 ranges = ranges_in,
                                 emulator_type = "deterministic",
                                 order = 2)
+if (save)
+  save(ems_wave2, file = "Outputs/ems_wave2.RData")
 
 # contour plot after history matching
 emulator_plot(ems_wave2, plot_type = 'imp', targets = targets, cb=TRUE)
@@ -343,17 +351,24 @@ vd <- validation_diagnostics(ems_wave2_mult_sigma, validation = wave1_validation
                              plt = TRUE)
 
 # wave2_points <- generate_new_runs(c(ems_wave2, ems_wave1), 60, targets, verbose = TRUE)
-wave2_points <- generate_new_runs(ems_wave2, 60, targets, verbose = TRUE)
+wave2_points <- generate_new_runs(ems_wave2[-c(5,6,13)], 60, targets, verbose = TRUE)
 
 plot_wrap(wave2_points, ranges = ranges_in)
 
-# visualisations of non-implausible space by wave
-##TODO: error
-all_points <- list(init_points, wave1_points, wave2_points)
-wave_points(all_points, input_names = names(ranges_in), p_size=1)
+if (save)
+  save(wave2_points, file = "Outputs/wave2_points.RData")
 
-all_waves <- list(wave0, wave1, wave2)
+##TODO:
+## more runs?...
+
+# visualisations of non-implausible space by wave
+all_points <- list(as.data.frame(init_points), wave1_points, wave2_points)
+wave_points(all_points, input_names = colnames(wave1_points), p_size=1, zero_in = T)
+# wave_points(all_points, input_names = names(ranges_in), p_size=1)
+
+all_waves <- list(wave0, wave1) #, wave2)
 wave_values(all_waves, targets, l_wid=1, p_size=1)
 
-
+behaviour_plot(ems_wave1, targets = targets)
+behaviour_plot(ems_wave2, targets = targets)
 
