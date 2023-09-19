@@ -192,27 +192,10 @@ init_results <- t(apply(init_points, 1,
 
 
 library(parallel)
-
-detectCores()
-
-# # doesnt seem to make any difference
-# inits_list <- purrr::array_branch(init_points, margin = 1)
-# init_results <- t(mclapply(inits_list,
-#                            FUN = test_get_results, indx_in = indx_in, indx_out = indx_out))
-
-# error
-# alternative approach
-# cl <- makeCluster(detectCores())
-# clusterEvalQ(cl, { })
-# clusterExport(cl = cl, varlist = c('runmodel', 'test_get_results', 'indx_in', 'indx_out'))
-# 
-# init_results <-
-#   parLapply(cl, inits_list,
-#             fun = function(x) test_get_results(input = x, indx_in = indx_in, indx_out = indx_out))
-# stopCluster(cl)
-
 library(doParallel)
 library(foreach)
+
+detectCores()
 
 cl <- makeCluster(detectCores())
 registerDoParallel(cl)  # register with foreach package
