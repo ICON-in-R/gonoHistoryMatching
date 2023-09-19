@@ -15,6 +15,7 @@ library(Rcpp)
 
 sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 
+# test run
 if (FALSE)
   res <- runmodel()
 
@@ -63,8 +64,8 @@ test_get_results <- function(input,
 
 # create for emulator
 #   - wave0: data of inputs and outputs from full model
-#   - ranges_in: upper and lower limits for transmission rates
-#   - targets: incidence output calibration central values and sd
+#   - ranges_in: upper and lower limits for transmission rates (inputs)
+#   - targets: incidence output calibration central values and sd (outputs)
 
 # subset vectors
 # all ages
@@ -84,6 +85,7 @@ age_grps <-  paste0("a", 0:3)
 inc_years <- paste0("y", 2017:2021)
 
 # all combinations of _output_ covariates
+# dim(groups_mat) is 360, 5
 groups_mat <-
   expand.grid(age_grp = age_grps,
               sexbeh = sexbeh_grps,
@@ -97,10 +99,11 @@ full_groups_out <- do.call(paste0, groups_mat)
 # subset parameters and data for testing
 groups_out <- full_groups_out[indx_out]
 
-n_grps_out <- length(groups_out)
+n_grps_out <- length(groups_out)  # 16
 
 # all combinations of _input_ covariates
-# difference with output is without year
+# difference compared to output is without year
+# dim(groups_in_mat) is 72, 4
 groups_in_mat <-
   expand.grid(age_grp = age_grps,
               sexbeh = sexbeh_grps,
@@ -113,12 +116,13 @@ full_groups_in <- do.call(paste0, groups_in_mat)
 # subset parameters and data for testing
 groups_in <- full_groups_in[indx_in]
 
-n_grps_in <- length(groups_in)
+n_grps_in <- length(groups_in)  # 8
 
 # upper and lower limits for input transmission rates
 ##TODO: what upper limit?
+##      Marija to check ...
 # point value in file is 0.022
-ranges_in <- 
+ranges_in <-
   rep(list(c(0, 0.05)), n_grps_in) |> 
   setNames(groups_in)
 
@@ -134,7 +138,9 @@ targets_dat <-
 # mean and standard deviation
 target_val <- data.frame(
   val = inc_mat_to_vector(targets_dat)) |> 
-  mutate(sigma = val/200 + 0.1)            ##TODO: this is arbitrary atm
+  mutate(sigma = val/(10*3.92))            # from Marija: 5-10%
+  # mutate(sigma = val/(5*3.92))            # from Marija: 5-10%
+  # mutate(sigma = val/200 + 0.1)          # ad-hoc
 
 # convert to named list
 all_targets <-
@@ -183,6 +189,44 @@ if (FALSE) {
 # run model for all LHS inputs
 init_results <- t(apply(init_points, 1,
                         test_get_results, indx_in = indx_in, indx_out = indx_out))
+
+
+library(parallel)
+
+detectCores()
+
+# # doesnt seem to make any difference
+# inits_list <- purrr::array_branch(init_points, margin = 1)
+# init_results <- t(mclapply(inits_list,
+#                            FUN = test_get_results, indx_in = indx_in, indx_out = indx_out))
+
+# error
+# alternative approach
+# cl <- makeCluster(detectCores())
+# clusterEvalQ(cl, { })
+# clusterExport(cl = cl, varlist = c('runmodel', 'test_get_results', 'indx_in', 'indx_out'))
+# 
+# init_results <-
+#   parLapply(cl, inits_list,
+#             fun = function(x) test_get_results(input = x, indx_in = indx_in, indx_out = indx_out))
+# stopCluster(cl)
+
+library(doParallel)
+library(foreach)
+
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)  # register with foreach package
+
+# init_results <- foreach(i = inits_list) %do%
+#   test_get_results(i, indx_in = indx_in, indx_out = indx_out)
+
+init_results <- foreach(i = inits_list, .combine='c',
+                        .packages = c("Rcpp", "gonoHistoryMatching"),
+                        .noexport = c('runmodel')) %dopar%
+  test_get_results(input = i, indx_in = indx_in, indx_out = indx_out)
+
+stopCluster(cl)
+
 
 # all named initial inputs and outputs
 wave0 <-
