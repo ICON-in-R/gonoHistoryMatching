@@ -7,7 +7,7 @@
 # this is a simplified data testing script for
 # a subset in inputs
 
-Rcpp::compileAttributes()
+Rcpp::compileAttributes(pkgdir = here::here(), verbose = TRUE)
 
 library(dplyr)
 library(purrr)
@@ -193,37 +193,18 @@ init_results <- t(apply(init_points, 1,
 ##TODO: error 
 ##      task 1 failed - "NULL value passed as symbol address"
 # https://stackoverflow.com/questions/25062383/cant-run-rcpp-function-in-foreach-null-value-passed-as-symbol-address
-# # parallelisation
-# 
-# library(parallel)
-# library(doParallel)
-# library(foreach)
-# 
-# detectCores()
-# 
-# inits_list <- purrr::array_branch(init_points, margin = 1)
-# 
-# cl <- makeCluster(detectCores())
-# registerDoParallel(cl)  # register with foreach package
-# 
-# # # non-parallel
-# # init_results <- foreach(i = inits_list) %do%
-# #   test_get_results(i, indx_in = indx_in, indx_out = indx_out)
-# 
-# init_results <- foreach(i = inits_list, #.combine='c',
-#                         .packages = c("Rcpp", "gonoHistoryMatching"),
-#                           .export = c('indx_in', 'indx_out'),
-#                         .noexport = c('loadCalibrationParameters',
-#                                       'loadCalibratioTargets',
-#                                       'loadDemographics',
-#                                       'loadParameters',
-#                                       'updatedCalibrationParameters')
-# ) %dopar% {
-#   test_get_results(input = i, indx_in = indx_in, indx_out = indx_out)
-# }
-# 
-# stopCluster(cl)
 
+# parallelisation
+
+library(parallel)
+library(doParallel)
+library(foreach)
+
+# # non-parallel
+# init_results <- foreach(i = inits_list) %do%
+#   test_get_results(i, indx_in = indx_in, indx_out = indx_out)
+
+init_results <- test_get_results_dopar(init_points, indx_in, indx_out)
 
 # all named initial inputs and outputs
 wave0 <-
