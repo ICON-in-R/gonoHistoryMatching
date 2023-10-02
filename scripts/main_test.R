@@ -14,10 +14,13 @@ library(purrr)
 library(Rcpp)
 
 sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
+# sourceCpp("src/GonorrheaDTM_jg.cpp", windowsDebugDLL = FALSE)
+
+savetofile <- FALSE
 
 # test run
 if (FALSE)
-  res <- runmodel()
+  microbenchmark::microbenchmark(runmodel(), times = 1)
 
 ############
 # functions
@@ -151,7 +154,7 @@ all_targets <-
 # subset parameters and data for testing
 targets <- all_targets[indx_out]
 
-if (save)
+if (savetofile)
   save(targets, file = "Outputs/targets.RData")
 
 # number of full model simulations
@@ -175,7 +178,7 @@ for (i in 1:n_grps_in) {
   init_points[, i] <- init_points[, i]*ranges_in[[i]][2] + rdiff 
 }
 
-if (save)
+if (savetofile)
   save(init_points, file = "Outputs/init_points.RData")
 
 #################
@@ -200,8 +203,11 @@ library(parallel)
 library(doParallel)
 library(foreach)
 
+##TODO: fix this package feature
+source("R/test_get_results_dopar.R")
+
 # # non-parallel
-# init_results <- foreach(i = inits_list) %do%
+# init_results <- foreach(i = init_points) %do%
 #   test_get_results(i, indx_in = indx_in, indx_out = indx_out)
 
 init_results <- test_get_results_dopar(init_points, indx_in, indx_out)
@@ -237,8 +243,6 @@ if (FALSE)
 library(ggplot2)
 library(hmer)
 
-save <- FALSE
-
 if (FALSE)
   load("Outputs/wave0.RData")  # inputs
 
@@ -257,7 +261,7 @@ ems_wave1 <-
                      order = 2) #,                     # of regression 
 # specified_priors = list(hyper_p = rep(0.55, length(targets))))
 
-if (save)
+if (savetofile)
   save(ems_wave1, file = "Outputs/ems_wave1.RData")
 
 # contour plot of pair of input parameters
@@ -342,7 +346,7 @@ wave1 <-
   `colnames<-`(c(groups_in, groups_out)) |> 
   as.data.frame()
 
-if (save)
+if (savetofile)
   save(wave1, file = "Outputs/wave1.RData")
 
 n_sample <- 50
@@ -355,7 +359,7 @@ ems_wave2 <- emulator_from_data(input_data = wave1_training,
                                 ranges = ranges_in,
                                 emulator_type = "deterministic",
                                 order = 2)
-if (save)
+if (savetofile)
   save(ems_wave2, file = "Outputs/ems_wave2.RData")
 
 # contour plot after history matching
@@ -377,7 +381,7 @@ wave2_points <- generate_new_runs(ems_wave2[-c(5,6,13)], 60, targets, verbose = 
 
 plot_wrap(wave2_points, ranges = ranges_in)
 
-if (save)
+if (savetofile)
   save(wave2_points, file = "Outputs/wave2_points.RData")
 
 ##TODO:

@@ -1,7 +1,9 @@
 
-#' Parallelised version
+#' Parallelised model runner
 #' 
-#' see
+#' don't seem to have a read/write race condition problems
+#' 
+#' see:
 #' https://stackoverflow.com/questions/58823105/use-doparallel-with-rcpp-function-on-window-inside-an-r-package
 #' 
 #' @import parallel foreach Rcpp doParallel
@@ -31,12 +33,11 @@ test_get_results_dopar <- function(init_points, indx_in, indx_out) {
   
   res <- foreach(i = 1:length(inits_list), .combine = 'c',
                  .packages = c("Rcpp", "gonoHistoryMatching"),
-                 .export = c('inc_mat_to_vector')
-                 # .noexport = c('loadCalibrationParameters',
-                 #               'loadCalibratioTargets',
-                 #               'loadDemographics',
-                 #               'loadParameters',
-                 #               'updatedCalibrationParameters')
+                 .export = c('inc_mat_to_vector',
+                             'runmodel')
+                 # .packages = c("Rcpp"),
+                 # .export = c("inc_mat_to_vector",
+                 #             "runmodel")
   ) %dopar% {
     # calibration values not overwritten
     params <- scan(file = "Inputs/Calibration parameters0.txt")
@@ -51,5 +52,5 @@ test_get_results_dopar <- function(init_points, indx_in, indx_out) {
     vout[indx_out]
   }
   
-  return(res)
+  res
 }
