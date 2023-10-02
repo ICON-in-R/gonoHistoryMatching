@@ -3,4 +3,7 @@
 .RData
 .Ruserdata
 Outputs
-Inputs
+Inputs/Calibrated incidence.txt
+Inputs/Calibration parameters.txt
+Inputs/Incidence.txt
+Inputs/Trajectories.txt
