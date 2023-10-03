@@ -6,6 +6,9 @@
 
 #include <Rcpp.h>
 
+// JG
+#define MODEL_FLOAT float
+
 using namespace Rcpp;
 
 class parameters {
@@ -17,45 +20,45 @@ class parameters {
     int nAges;
     int nDiseaseStates;
     int timeHorizon;
-    double cDisc;
-    double uDisc;
-    std::vector<std::vector<std::vector<std::vector<double>>>> popDistribution;
-    std::vector<std::vector<double>> birthRate;
-    std::vector<std::vector<std::vector<double>>> deathRate;
-    std::vector<std::vector<std::vector<std::vector<double>>>> newborneDistribution;
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> transmissionRate;
-    std::vector<double> latencyRate;
-    std::vector<double> propAsymp;
-    std::vector<double> tretmentRate;
-    std::vector<double> recoveryRate;
-    std::vector<std::vector<std::vector<double>>> screeningRate;
-    std::vector<std::vector<double>> pRaces;
-    std::vector<std::vector<double>> pSexActs;
-    std::vector<std::vector<double>> pAges;
-    std::vector<double> nmbPartners;
-    std::vector<std::vector<std::vector<std::vector<double>>>> sexFrequency;
+    MODEL_FLOAT cDisc;
+    MODEL_FLOAT uDisc;
+    std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>> popDistribution;
+    std::vector<std::vector<MODEL_FLOAT>> birthRate;
+    std::vector<std::vector<std::vector<MODEL_FLOAT>>> deathRate;
+    std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>> newborneDistribution;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> transmissionRate;
+    std::vector<MODEL_FLOAT> latencyRate;
+    std::vector<MODEL_FLOAT> propAsymp;
+    std::vector<MODEL_FLOAT> tretmentRate;
+    std::vector<MODEL_FLOAT> recoveryRate;
+    std::vector<std::vector<std::vector<MODEL_FLOAT>>> screeningRate;
+    std::vector<std::vector<MODEL_FLOAT>> pRaces;
+    std::vector<std::vector<MODEL_FLOAT>> pSexActs;
+    std::vector<std::vector<MODEL_FLOAT>> pAges;
+    std::vector<MODEL_FLOAT> nmbPartners;
+    std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>> sexFrequency;
     
     int Age_min;
     int Age_max;
     int ageGroup_size;
-    std::vector<double> ageGroup_bound;
+    std::vector<MODEL_FLOAT> ageGroup_bound;
     
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> calibrationTarget;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> calibrationTarget;
     
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> vaccA1;
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> vaccA2;
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> vaccA3;
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> vaccA4;
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> vaccB2;
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> vaccB3;
-    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> vaccB4;
-    std::vector<double> waningImmunityA1;
-    std::vector<double> waningImmunityA2;
-    std::vector<double> waningImmunityA3;
-    std::vector<double> waningImmunityA4;
-    std::vector<double> waningImmunityB2;
-    std::vector<double> waningImmunityB3;
-    std::vector<double> waningImmunityB4;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> vaccA1;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> vaccA2;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> vaccA3;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> vaccA4;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> vaccB2;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> vaccB3;
+    std::vector<std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>>> vaccB4;
+    std::vector<MODEL_FLOAT> waningImmunityA1;
+    std::vector<MODEL_FLOAT> waningImmunityA2;
+    std::vector<MODEL_FLOAT> waningImmunityA3;
+    std::vector<MODEL_FLOAT> waningImmunityA4;
+    std::vector<MODEL_FLOAT> waningImmunityB2;
+    std::vector<MODEL_FLOAT> waningImmunityB3;
+    std::vector<MODEL_FLOAT> waningImmunityB4;
     
     parameters() {
       nRaces = 0;
@@ -75,13 +78,14 @@ class parameters {
 
 class psa_parameters {
   public:
-    std::vector<std::vector<double>> latencyRate;
-    std::vector<std::vector<double>> propAsymp;
-    std::vector<std::vector<double>> tretmentRate;
-    std::vector<std::vector<double>> recoveryRate;
-    std::vector<std::vector<double>> recoveryAsympRate;
-    std::vector<std::vector<std::vector<std::vector<double>>>> screeningRate;
-    
+    std::vector<std::vector<MODEL_FLOAT>> latencyRate;
+    std::vector<std::vector<MODEL_FLOAT>> propAsymp;
+    std::vector<std::vector<MODEL_FLOAT>> tretmentRate;
+    std::vector<std::vector<MODEL_FLOAT>> recoveryRate;
+    std::vector<std::vector<MODEL_FLOAT>> recoveryAsympRate;
+    std::vector<std::vector<std::vector<std::vector<MODEL_FLOAT>>>> screeningRate;
+    //fixed_vector<fixed_vector<fixed_vector<fixed_vector<MODEL_FLOAT, 30>, 30>, 30>, 30> screeningRate2;
+
     psa_parameters() {
     }
 };

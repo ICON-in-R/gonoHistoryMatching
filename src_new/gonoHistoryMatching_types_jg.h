@@ -1,15 +1,15 @@
 // gonoHistoryMatching types
 
 
-#ifndef GONOHISTORYMATCHING_H
-#define GONOHISTORYMATCHING_H
+#ifndef GONOHISTORYMATCHING_JG_H
+#define GONOHISTORYMATCHING_JG_H
 
 #include <Rcpp.h>
 
+using namespace Rcpp;
+
 // JG
 #define MODEL_FLOAT float
-
-using namespace Rcpp;
 
 class parameters {
   public:

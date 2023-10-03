@@ -1,7 +1,7 @@
 #include <RcppCommon.h>
 using namespace Rcpp;
 
-// GonorrheaDTMModel.cpp : This file contains the 'main' function
+// GonorrheaDTMModel_jg.cpp : This file contains the 'main' function
 // Program execution begins and ends there
 
 #include <fstream>
@@ -322,7 +322,45 @@ void free_f3tensor(double*** t, long nrl, long nrh, long ncl, long nch, long ndl
     free((FREE_ARG)(t + nrl - NR_END));
 }
 
+// JG
+#define MODEL_FLOAT float
 
+// JG
+size_t calculateTotalSizePsa(const psa_parameters& psa) {
+    size_t totalSize = sizeof(psa); // Size of the struct itself
+
+    // Calculate the sizes of the vector elements
+    for (const auto& vec : psa.latencyRate) {
+        totalSize += sizeof(vec) + vec.size() * sizeof(MODEL_FLOAT);
+    }
+
+    for (const auto& vec : psa.propAsymp) {
+        totalSize += sizeof(vec) + vec.size() * sizeof(MODEL_FLOAT);
+    }
+
+    for (const auto& vec : psa.tretmentRate) {
+        totalSize += sizeof(vec) + vec.size() * sizeof(MODEL_FLOAT);
+    }
+
+    for (const auto& vec : psa.recoveryRate) {
+        totalSize += sizeof(vec) + vec.size() * sizeof(MODEL_FLOAT);
+    }
+
+    for (const auto& vec : psa.recoveryAsympRate) {
+        totalSize += sizeof(vec) + vec.size() * sizeof(MODEL_FLOAT);
+    }
+
+    for (const auto& vec3 : psa.screeningRate) {
+        for (const auto& vec2 : vec3) {
+            for (const auto& vec1 : vec2) {
+                totalSize += sizeof(vec1) + vec1.size() * sizeof(MODEL_FLOAT);
+            }
+        }
+    }
+    return totalSize;
+}
+
+//
 void rkck(double** PopulationX, parameters& Parameters, psa_parameters* psaParameters, int race, int gender, int sexBehs, int age,
           double y[], double dydx[], int n, double x, double h, double yout[], double yerr[], double year, double month,
           void (*derivs)(double**, parameters&, psa_parameters*, int, int, int, int, double, double[], double[], double, double, int, int), int ns, int np)
@@ -737,8 +775,16 @@ void odeint(double** PopulationX, parameters& Parameters, psa_parameters* psaPar
     double x2 = x1 + tint;
     double dxsav = (x2 - x1) / 100.0;
 
-    vector<double> xp(KMAXX, 0.0);
-    vector<vector<double>> yp(nvar, vector<double>(KMAXX, 0.0));  //???
+    // JG  this reduces the time from 41 secs -> 37 secs - a 10% speed up
+    //vector<double> xp(KMAXX, 0.0);
+    MODEL_FLOAT xp[KMAXX] = {0.0};
+    //printf("odeint MODEL_FLOAT xp[] size: %zu bytes\n", sizeof(xp));
+
+    // JG 'nvar' is 76356 with these data files, hard code it to test performance
+    // this reduces the time to 33 seconds, another 11% speed up
+    //vector<vector<double>> yp(nvar, vector<double>(KMAXX, 0.0));  //???
+    MODEL_FLOAT yp[76356][KMAXX] = {0.0};
+    //printf("odeint MODEL_FLOAT yp[] size: %zu bytes (%u * %d * %zu bytes)\n", sizeof(yp), 76356U, KMAXX, sizeof(MODEL_FLOAT));
 
     int nstp, i;
     int kount = 0;
@@ -795,7 +841,7 @@ void loadInitialPopulation(std::string inputPath, double*** PopulationX, paramet
         exit(1);
     }
 
-    std::vector<std::vector<double>> vec;
+    std::vector<std::vector<double>> vec;   //TODO: what does this do?
     std::string lineData;
 
     //load initial population distribution
@@ -836,14 +882,15 @@ void loadInitialPopulation(std::string inputPath, double*** PopulationX, paramet
     double sumB = 0.0;
     double sumH = 0.0;
     double sumW = 0.0;
+
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.popDistribution.push_back(vector<vector<vector<double>>>());
+        Parameters.popDistribution.push_back(vector<vector<vector<MODEL_FLOAT>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.popDistribution[i].push_back(vector<vector<double>>());
+            Parameters.popDistribution[i].push_back(vector<vector<MODEL_FLOAT>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.popDistribution[i][j].push_back(vector<double>());
+                Parameters.popDistribution[i][j].push_back(vector<MODEL_FLOAT>());
                 for (int l = 0; l < Parameters.nSexActs; l++) {
-                    double pom = sumVector(PopulationX[0][0], Parameters, i, i, j, j, k, k, l, l, 0, Parameters.nAges - 1, 0, Parameters.nDiseaseStates - 3);  // - 3 to remove incidence
+                    MODEL_FLOAT pom = sumVector(PopulationX[0][0], Parameters, i, i, j, j, k, k, l, l, 0, Parameters.nAges - 1, 0, Parameters.nDiseaseStates - 3);  // - 3 to remove incidence
                     if (i == 0) { Parameters.popDistribution[i][j][k].push_back(pom / totalBlack); sumB = Parameters.popDistribution[i][j][k][l] + sumB; }
                     else
                         if (i == 1) {
@@ -872,7 +919,7 @@ void loadDemographics(std::string inputPath, parameters& Parameters) {
         exit(1);
     }
     
-    std::vector<std::vector<double>> vec;
+    std::vector<std::vector<MODEL_FLOAT>> vec;
     std::string lineData;
 
     //load age group structure for calibration
@@ -886,8 +933,8 @@ void loadDemographics(std::string inputPath, parameters& Parameters) {
 
     //load yearly birth rate - per capita
     for (int i = 0; i < Parameters.nRaces; i++) {
-        double d;
-        vector<double> row;
+        MODEL_FLOAT d;
+        vector<MODEL_FLOAT> row;
         std::getline(ifile, lineData);
         stringstream lineStream(lineData);
         while (lineStream >> d) 
@@ -897,10 +944,10 @@ void loadDemographics(std::string inputPath, parameters& Parameters) {
     
     //load monthly death rate 
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.deathRate.push_back(vector<vector<double>>());
+        Parameters.deathRate.push_back(vector<vector<MODEL_FLOAT>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            double d;
-            vector<double> row;
+            MODEL_FLOAT d;
+            vector<MODEL_FLOAT> row;
             std::getline(ifile, lineData);
             stringstream lineStream(lineData);
             while (lineStream >> d) row.push_back(d);
@@ -909,15 +956,15 @@ void loadDemographics(std::string inputPath, parameters& Parameters) {
     }
    
     //load assortative mixing for race/ethnicity
-    double d;
-    vector<double> row;
+    MODEL_FLOAT d;
+    vector<MODEL_FLOAT> row;
     std::getline(ifile, lineData);
     stringstream lineStream(lineData);
     
     //load assortative mixing for race/ethnicity
     lineStream >> d;
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.pRaces.push_back(vector<double>());
+        Parameters.pRaces.push_back(vector<MODEL_FLOAT>());
         for (int i1 = 0; i1 < Parameters.nRaces; i1++)
             if (i == i1) Parameters.pRaces[i].push_back(d);
             else Parameters.pRaces[i].push_back((1 - d) / 2);  //HARDCODED 2 to equally split proportion of contact among other race/ethnic groups
@@ -926,7 +973,7 @@ void loadDemographics(std::string inputPath, parameters& Parameters) {
     //load assortative mixing for sexual activity
     lineStream >> d;
     for (int l = 0; l < Parameters.nSexActs; l++) {
-        Parameters.pSexActs.push_back(vector<double>());
+        Parameters.pSexActs.push_back(vector<MODEL_FLOAT>());
         for (int l1 = 0; l1 < Parameters.nSexActs; l1++)
             if (l == 0 || l1 == 0)Parameters.pSexActs[l].push_back(0);
             else
@@ -938,7 +985,7 @@ void loadDemographics(std::string inputPath, parameters& Parameters) {
     lineStream >> d;
 
     for (int m = 0; m < Parameters.nAges; m++) {
-        Parameters.pAges.push_back(vector<double>());
+        Parameters.pAges.push_back(vector<MODEL_FLOAT>());
         for (int m1 = 0; m1 < Parameters.nAges; m1++) {
             if ((m >= Parameters.Age_min) & (m <= Parameters.Age_max) & (m1 >= Parameters.Age_min) & (m1 <= Parameters.Age_max))
             {
@@ -966,12 +1013,12 @@ void loadDemographics(std::string inputPath, parameters& Parameters) {
 
     //load mean number of sexual partners per month by age group
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.sexFrequency.push_back(vector<vector<vector<double>>>());
+        Parameters.sexFrequency.push_back(vector<vector<vector<MODEL_FLOAT>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.sexFrequency[i].push_back(vector<vector<double>>());
+            Parameters.sexFrequency[i].push_back(vector<vector<MODEL_FLOAT>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                double d;
-                vector<double> row;
+                MODEL_FLOAT d;
+                vector<MODEL_FLOAT> row;
                 std::getline(ifile, lineData);
                 stringstream lineStream(lineData);
                 while (lineStream >> d) row.push_back(d/12);
@@ -996,14 +1043,14 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
     
     //load vaccination.rate.A1 
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.vaccA1.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.vaccA1.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.vaccA1[i].push_back(vector<vector<vector<double>>>());
+            Parameters.vaccA1[i].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.vaccA1[i][j].push_back(vector<vector<double>>());
+                Parameters.vaccA1[i][j].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int l = 0; l < Parameters.nSexActs; l++) {
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1015,14 +1062,14 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
     //load vaccination.rate.A2
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.vaccA2.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.vaccA2.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.vaccA2[i].push_back(vector<vector<vector<double>>>());
+            Parameters.vaccA2[i].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.vaccA2[i][j].push_back(vector<vector<double>>());
+                Parameters.vaccA2[i][j].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int l = 0; l < Parameters.nSexActs; l++) {
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1034,14 +1081,14 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
     //load vaccination.rate.A3 
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.vaccA3.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.vaccA3.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.vaccA3[i].push_back(vector<vector<vector<double>>>());
+            Parameters.vaccA3[i].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.vaccA3[i][j].push_back(vector<vector<double>>());
+                Parameters.vaccA3[i][j].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int l = 0; l < Parameters.nSexActs; l++) {
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1053,14 +1100,14 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
     //load vaccination.rate.A4 
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.vaccA4.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.vaccA4.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.vaccA4[i].push_back(vector<vector<vector<double>>>());
+            Parameters.vaccA4[i].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.vaccA4[i][j].push_back(vector<vector<double>>());
+                Parameters.vaccA4[i][j].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int l = 0; l < Parameters.nSexActs; l++) {
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1072,14 +1119,14 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
     //load vaccination.rate.B2 
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.vaccB2.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.vaccB2.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.vaccB2[i].push_back(vector<vector<vector<double>>>());
+            Parameters.vaccB2[i].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.vaccB2[i][j].push_back(vector<vector<double>>());
+                Parameters.vaccB2[i][j].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int l = 0; l < Parameters.nSexActs; l++) {
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1091,14 +1138,14 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
     //load vaccination.rate.B3 
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.vaccB3.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.vaccB3.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.vaccB3[i].push_back(vector<vector<vector<double>>>());
+            Parameters.vaccB3[i].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.vaccB3[i][j].push_back(vector<vector<double>>());
+                Parameters.vaccB3[i][j].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int l = 0; l < Parameters.nSexActs; l++) {
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1110,14 +1157,14 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
     //load vaccination.rate.B4
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.vaccB4.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.vaccB4.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.vaccB4[i].push_back(vector<vector<vector<double>>>());
+            Parameters.vaccB4[i].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.vaccB4[i][j].push_back(vector<vector<double>>());
+                Parameters.vaccB4[i][j].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int l = 0; l < Parameters.nSexActs; l++) {
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1128,7 +1175,7 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
     }
 
     //load waning.immunity
-    double d;
+    MODEL_FLOAT d;
     getline(ifile, lineData); stringstream lineStreamA1(lineData); while (lineStreamA1 >> d) Parameters.waningImmunityA1.push_back(d);
     getline(ifile, lineData); stringstream lineStreamA2(lineData); while (lineStreamA2 >> d) Parameters.waningImmunityA2.push_back(d);
     getline(ifile, lineData); stringstream lineStreamA3(lineData); while (lineStreamA3 >> d) Parameters.waningImmunityA3.push_back(d);
@@ -1142,7 +1189,7 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
     {
         //load latency rate
         for (int j = 0; j < Parameters.nGenders; j++) {
-            psaParameters[ns].latencyRate.push_back(vector<double>());
+            psaParameters[ns].latencyRate.push_back(vector<MODEL_FLOAT>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
                 getline(ifile, lineData); psaParameters[ns].latencyRate[j].push_back(1 / stod(lineData));
             }
@@ -1150,7 +1197,7 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
         //load proportion of asymptomatic
         for (int j = 0; j < Parameters.nGenders; j++) {
-            psaParameters[ns].propAsymp.push_back(vector<double>());
+            psaParameters[ns].propAsymp.push_back(vector<MODEL_FLOAT>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
                 getline(ifile, lineData); psaParameters[ns].propAsymp[j].push_back(stod(lineData));
             }
@@ -1158,7 +1205,7 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
         //load treatment rate
         for (int j = 0; j < Parameters.nGenders; j++) {
-            psaParameters[ns].tretmentRate.push_back(vector<double>());
+            psaParameters[ns].tretmentRate.push_back(vector<MODEL_FLOAT>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
                 getline(ifile, lineData); psaParameters[ns].tretmentRate[j].push_back(1 / stod(lineData));
             }
@@ -1166,7 +1213,7 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
         //load recovery rate
         for (int j = 0; j < Parameters.nGenders; j++) {
-            psaParameters[ns].recoveryRate.push_back(vector<double>());
+            psaParameters[ns].recoveryRate.push_back(vector<MODEL_FLOAT>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
                 getline(ifile, lineData); psaParameters[ns].recoveryRate[j].push_back(1 / stod(lineData));
             }
@@ -1174,7 +1221,7 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
 
         //load recovery asymptgomatic rate
         for (int j = 0; j < Parameters.nGenders; j++) {
-            psaParameters[ns].recoveryAsympRate.push_back(vector<double>());
+            psaParameters[ns].recoveryAsympRate.push_back(vector<MODEL_FLOAT>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
                 getline(ifile, lineData); psaParameters[ns].recoveryAsympRate[j].push_back(1 / stod(lineData));
             }
@@ -1182,12 +1229,12 @@ void loadParameters(std::string inputPath, parameters& Parameters, psa_parameter
         
         //load screening rate
         for (int i = 0; i < Parameters.nRaces; i++) {
-            psaParameters[ns].screeningRate.push_back(vector<vector<vector<double>>>());
+            psaParameters[ns].screeningRate.push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int j = 0; j < Parameters.nGenders; j++) {
-                psaParameters[ns].screeningRate[i].push_back(vector<vector<double>>());
+                psaParameters[ns].screeningRate[i].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1209,19 +1256,19 @@ void loadCalibratioTargets(std::string inputPath, parameters& Parameters) {
         exit(1);
     }
 
-    std::vector<std::vector<double>> vec;
+    std::vector<std::vector<MODEL_FLOAT>> vec;
     std::string lineData;
 
     //load calibration targets: race, gender, sex.beh, age group, time 
     for (int i = 0; i < Parameters.nRaces; i++) {
-        Parameters.calibrationTarget.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.calibrationTarget.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int j = 0; j < Parameters.nGenders; j++) {
-            Parameters.calibrationTarget[i].push_back(vector<vector<vector<double>>>());
+            Parameters.calibrationTarget[i].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                Parameters.calibrationTarget[i][j].push_back(vector<vector<double>>());
+                Parameters.calibrationTarget[i][j].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int m1 = 0; m1 < Parameters.ageGroup_size; m1++) { 
-                    double d;
-                    vector<double> row;
+                    MODEL_FLOAT d;
+                    vector<MODEL_FLOAT> row;
                     getline(ifile, lineData);
                     stringstream lineStream(lineData);
                     while (lineStream >> d) row.push_back(d);
@@ -1242,21 +1289,21 @@ void loadCalibrationParameters(std::string inputPath, parameters& Parameters, in
         exit(1);
     }
 
-    std::vector<std::vector<double>> vec;
+    std::vector<std::vector<MODEL_FLOAT>> vec;
     std::string lineData;
 
     //load calibrated contact frequency: race, gender, sex.beh 
     for (int np = 0; np < numbParallel; np++) {
-        Parameters.transmissionRate.push_back(vector<vector<vector<vector<double>>>>());
+        Parameters.transmissionRate.push_back(vector<vector<vector<vector<MODEL_FLOAT>>>>());
         for (int i = 0; i < Parameters.nRaces; i++) {
-            Parameters.transmissionRate[np].push_back(vector<vector<vector<double>>>());
+            Parameters.transmissionRate[np].push_back(vector<vector<vector<MODEL_FLOAT>>>());
             for (int j = 0; j < Parameters.nGenders; j++) {
-                Parameters.transmissionRate[np][i].push_back(vector<vector<double>>());
+                Parameters.transmissionRate[np][i].push_back(vector<vector<MODEL_FLOAT>>());
                 for (int k = 0; k < Parameters.nSexualBehs; k++) {
-                    Parameters.transmissionRate[np][i][j].push_back(vector<double>());
+                    Parameters.transmissionRate[np][i][j].push_back(vector<MODEL_FLOAT>());
                     for (int m1 = 0; m1 < Parameters.ageGroup_size; m1++) {  //HARDCODED
                         if (np == 0) {
-                            double d;
+                            MODEL_FLOAT d;
                             getline(ifile, lineData);
                             stringstream lineStream1(lineData);
                             lineStream1 >> d;
@@ -1309,9 +1356,9 @@ void saveCalibratedIncidence(double** Population, std::string filename, paramete
     //aggregate and save incidence
     int dim = Parameters.nRaces * Parameters.nGenders * Parameters.nSexualBehs * Parameters.ageGroup_size;
 
-    double** Incidence = new double* [5];  //HARDCODED for 5 years
+    MODEL_FLOAT** Incidence = new MODEL_FLOAT* [5];  //HARDCODED for 5 years
         for (int t = 0; t < 5; t++)
-            Incidence[t] = new double[dim];
+            Incidence[t] = new MODEL_FLOAT[dim];
     
     std::ofstream ofile(filename);
     if (ofile.good()) {
@@ -1518,7 +1565,7 @@ void saveTrajectories(double** population, std::string filename, parameters& Par
 }
 
 // [[Rcpp::export]]
-int runmodel()
+int runmodel(std::string calibrationPath)
 {
   int NumbSim = 2;
   
@@ -1532,7 +1579,7 @@ int runmodel()
   Parameters.nDiseaseStates = 14;  //12 disease related stated plus two more state for incidence to be corrected
   Parameters.timeHorizon = 7;      // atoi(argv[10]);
   
-  std::string Path = "./Inputs/";
+  std::string inPath = "./Inputs/";
   
   psa_parameters psaParameters[1000];
   
@@ -1551,21 +1598,21 @@ int runmodel()
   
   double initialInfection = 0.1;
   
-  loadInitialPopulation(Path + "Initial population.txt", PopulationX, Parameters, NumbParallel, initialInfection);
-  loadDemographics(Path + "Demographic parameters.txt", Parameters);
-  loadParameters(Path + "Parameters.txt", Parameters, psaParameters, NumbSim);
-  loadCalibrationParameters(Path + "Calibration parameters.txt", Parameters, NumbParallel);
+  loadInitialPopulation(inPath + "Initial population.txt", PopulationX, Parameters, NumbParallel, initialInfection);
+  loadDemographics(inPath + "Demographic parameters.txt", Parameters);
+  loadParameters(inPath + "Parameters.txt", Parameters, psaParameters, NumbSim);
+  loadCalibrationParameters(calibrationPath + "Calibration parameters.txt", Parameters, NumbParallel);
   
-  //run model dynamics
+  // run model dynamics
   runModelDynamics(PopulationX[0], Parameters, psaParameters, 0,0);
   
-  //save 
-  updatedCalibrationParameters(Path + "Calibration parameters.txt", Parameters);
-  saveCalibratedIncidence(PopulationX[0], Path + "Calibrated incidence.txt", Parameters);
+  // save 
+  //updatedCalibrationParameters(inPath + "Calibration parameters.txt", Parameters);
+  saveCalibratedIncidence(PopulationX[0], calibrationPath + "Calibrated incidence.txt", Parameters);
   
-  //save outputs
-  saveIncidence(PopulationX[0], Path + "Incidence.csv", Parameters, maxRunTime);
-  saveTrajectories(PopulationX[0], Path + "Trajectories.txt", Parameters, maxRunTime);
+  // //save outputs
+  //saveIncidence(PopulationX[0], inPath + "Incidence.csv", Parameters, maxRunTime);
+  //saveTrajectories(PopulationX[0], inPath + "Trajectories.txt", Parameters, maxRunTime);
   
   //release memory
   for (int np = 0; np < NumbParallel; np++) {

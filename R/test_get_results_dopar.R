@@ -21,7 +21,7 @@ test_get_results_dopar <- function(init_points, indx_in, indx_out) {
   
   inits_list <- purrr::array_branch(init_points, margin = 1)
   
-  cl <- parallel::makeCluster(parallel::detectCores() - 1)
+  cl <- parallel::makeCluster(parallel::detectCores() - 1, outfile = "")
   
   on.exit(parallel::stopCluster(cl))
   
@@ -31,25 +31,33 @@ test_get_results_dopar <- function(init_points, indx_in, indx_out) {
   # init_results <- foreach(i = inits_list) %do%
   #   test_get_results(i, indx_in = indx_in, indx_out = indx_out)
   
-  res <- foreach(i = 1:length(inits_list), .combine = 'c',
+  params0 <- scan(file = "Inputs/Calibration parameters0.txt")
+    
+  res <- foreach(i = 1:length(inits_list), .combine = 'rbind',
                  .packages = c("Rcpp", "gonoHistoryMatching"),
-                 .export = c('inc_mat_to_vector',
-                             'runmodel')
-                 # .packages = c("Rcpp"),
-                 # .export = c("inc_mat_to_vector",
-                 #             "runmodel")
+                 .export = c('params0')
   ) %dopar% {
     # calibration values not overwritten
-    params <- scan(file = "Inputs/Calibration parameters0.txt")
+    params <- params0
     params[indx_in] <- inits_list[[i]]
-    write.table(params, file = "Inputs/Calibration parameters.txt",
+    
+    # create separate folder for each run
+    dir_name <- paste0("./Inputs/temp/calibration", i, "/")
+    dir.create(path = dir_name)
+               
+    write.table(params, file = paste0(dir_name, "Calibration parameters.txt"),
                 col.names = FALSE, row.names = FALSE)
-    runmodel()
-    out <- read.delim(file = "Inputs/Calibrated incidence.txt", header = FALSE)
+    
+    runmodel(dir_name)
+    
+    out <- read.delim(file = paste0(dir_name, "Calibrated incidence.txt"), header = FALSE)
     
     # rearrange to calibration format
     vout <- inc_mat_to_vector(out)
     vout[indx_out]
+    
+    # delete folder
+    unlink(dir_name, recursive = TRUE)
   }
   
   res

@@ -70,12 +70,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // runmodel
-int runmodel();
-RcppExport SEXP _gonoHistoryMatching_runmodel() {
+int runmodel(std::string calibrationPath);
+RcppExport SEXP _gonoHistoryMatching_runmodel(SEXP calibrationPathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(runmodel());
+    Rcpp::traits::input_parameter< std::string >::type calibrationPath(calibrationPathSEXP);
+    rcpp_result_gen = Rcpp::wrap(runmodel(calibrationPath));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -86,7 +87,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gonoHistoryMatching_loadCalibratioTargets", (DL_FUNC) &_gonoHistoryMatching_loadCalibratioTargets, 2},
     {"_gonoHistoryMatching_loadCalibrationParameters", (DL_FUNC) &_gonoHistoryMatching_loadCalibrationParameters, 3},
     {"_gonoHistoryMatching_updatedCalibrationParameters", (DL_FUNC) &_gonoHistoryMatching_updatedCalibrationParameters, 2},
-    {"_gonoHistoryMatching_runmodel", (DL_FUNC) &_gonoHistoryMatching_runmodel, 0},
+    {"_gonoHistoryMatching_runmodel", (DL_FUNC) &_gonoHistoryMatching_runmodel, 1},
     {NULL, NULL, 0}
 };
 

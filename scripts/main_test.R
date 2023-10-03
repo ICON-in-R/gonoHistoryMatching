@@ -14,13 +14,12 @@ library(purrr)
 library(Rcpp)
 
 sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
-# sourceCpp("src/GonorrheaDTM_jg.cpp", windowsDebugDLL = FALSE)
 
 savetofile <- FALSE
 
 # test run
 if (FALSE)
-  microbenchmark::microbenchmark(runmodel(), times = 1)
+  microbenchmark::microbenchmark(runmodel("./Inputs/"), times = 1)
 
 ############
 # functions
@@ -49,12 +48,13 @@ inc_mat_to_vector <- function(x) {
 test_get_results <- function(input,
                              indx_in = c(1,2,3,4),
                              indx_out = c(1,2,3,4)) {
+  
   # calibration values not overwritten
   params <- scan(file = "Inputs/Calibration parameters0.txt")
   params[indx_in] <- input
   write.table(params, file = "Inputs/Calibration parameters.txt",
               col.names = FALSE, row.names = FALSE)
-  runmodel()
+  runmodel("./Inputs/")
   out <- read.delim(file = "Inputs/Calibrated incidence.txt", header = FALSE)
   
   # rearrange to calibration format
@@ -203,14 +203,17 @@ library(parallel)
 library(doParallel)
 library(foreach)
 
-##TODO: fix this package feature
-source("R/test_get_results_dopar.R")
+inits_list <- purrr::array_branch(init_points, margin = 1)
 
 # # non-parallel
-# init_results <- foreach(i = init_points) %do%
-#   test_get_results(i, indx_in = indx_in, indx_out = indx_out)
+# init_results <- foreach(i = 1:length((inits_list))) %do%
+# init_results <- foreach(i = 1:2, .combine = 'rbind') %do%
+#   test_get_results(inits_list[[i]], indx_in = indx_in, indx_out = indx_out)
 
-init_results <- test_get_results_dopar(init_points, indx_in, indx_out)
+microbenchmark::microbenchmark(
+  init_results <- test_get_results_dopar(init_points, indx_in, indx_out),
+  times = 1)
+
 
 # all named initial inputs and outputs
 wave0 <-
