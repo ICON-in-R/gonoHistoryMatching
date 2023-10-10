@@ -70,17 +70,6 @@ test_get_results <- function(input,
 #   - ranges_in: upper and lower limits for transmission rates (inputs)
 #   - targets: incidence output calibration central values and sd (outputs)
 
-# subset vectors
-# all ages
-# ethnicity group 1
-indx_in <- c(1,2,3,4,       # male
-             13,14,15,16)   # female
-
-indx_out <- c(1,2,3,4,      # 2017
-              13,14,15,16,
-              73,74,75,76,  # 2018
-              85,86,87,88)
-
 ethnicity_grps <- paste0("e", 1:3)
 sex_grps <- c("male", "female")
 sexbeh_grps <- c("heterosexual", "homosexual", "bisexual")
@@ -95,6 +84,21 @@ groups_mat <-
               sex = sex_grps,
               ethnicity = ethnicity_grps,
               time = inc_years)
+
+# select subset vectors
+ems_eth_grps <-  paste0("e", 1:3)
+ems_sex_grps <- c("male", "female")
+ems_sexbeh_grps <- "heterosexual"
+ems_age_grps <- paste0("a", 0:3)
+ems_inc_years <- c("y2017", "y2018")
+
+indx_out <- 
+  which(
+    groups_mat$age_grp %in% ems_age_grps &
+      groups_mat$sexbeh %in% ems_sexbeh_grps &
+      groups_mat$sex %in% ems_sex_grps &
+      groups_mat$ethnicity %in% ems_eth_grps &
+      groups_mat$time %in% ems_inc_years)
 
 # vector of all output group names
 full_groups_out <- do.call(paste0, groups_mat)
@@ -112,6 +116,13 @@ groups_in_mat <-
               sexbeh = sexbeh_grps,
               sex = sex_grps,
               ethnicity = ethnicity_grps)
+
+indx_in <- 
+  which(
+    groups_in_mat$age_grp %in% ems_age_grps &
+      groups_in_mat$sexbeh %in% ems_sexbeh_grps &
+      groups_in_mat$sex %in% ems_sex_grps &
+      groups_in_mat$ethnicity %in% ems_eth_grps)
 
 # vector of all input group names
 full_groups_in <- do.call(paste0, groups_in_mat)
@@ -189,9 +200,10 @@ if (FALSE) {
   init_results <- test_get_results(init_points[i, ], indx_in, indx_out)
 }
 
-# run model for all LHS inputs
-init_results <- t(apply(init_points, 1,
-                        test_get_results, indx_in = indx_in, indx_out = indx_out))
+# # run model for all LHS inputs
+# # in serial
+# init_results <- t(apply(init_points, 1,
+#                         test_get_results, indx_in = indx_in, indx_out = indx_out))
 
 ##TODO: error 
 ##      task 1 failed - "NULL value passed as symbol address"
@@ -214,14 +226,13 @@ microbenchmark::microbenchmark(
   init_results <- test_get_results_dopar(init_points, indx_in, indx_out),
   times = 1)
 
-
 # all named initial inputs and outputs
 wave0 <-
   cbind(init_points, init_results) |> 
   `colnames<-`(c(groups_in, groups_out)) |> 
   as.data.frame()
 
-if (FALSE)
+if (savetofile)
   save(wave0, file = "Outputs/wave0.RData")
 
 # # output incidence with known inputs
@@ -274,6 +285,10 @@ emulator_plot(ems_wave1$a1heterosexualmalee1y2017)
 emulator_plot(ems_wave1$a2heterosexualmalee1y2017)
 emulator_plot(ems_wave1$a3heterosexualmalee1y2017)
 
+emulator_plot(ems_wave1[[1]])
+emulator_plot(ems_wave1[[2]])
+emulator_plot(ems_wave1[[3]])
+
 # input-output grid
 plot_actives(ems_wave1)
 
@@ -287,15 +302,19 @@ summary(ems_wave1$a0heterosexualmalee1y2017$model)$adj.r.squared
 
 # implausibility
 # >3 unlikely to give a good fit
-emulator_plot(ems_wave1$a0heterosexualmalee1y2017, plot_type = 'imp',
+emulator_plot(ems_wave1[[1]], plot_type = 'imp',
               targets = targets, cb=TRUE)
 
+# grids
 emulator_plot(ems_wave1, plot_type = 'imp', targets = targets, cb=TRUE)
 emulator_plot(ems_wave1, params = c("a0heterosexualmalee1", "a0heterosexualfemalee1"), plot_type = 'imp', targets = targets, cb=TRUE)
 emulator_plot(ems_wave1, params = c("a2heterosexualmalee1", "a2heterosexualfemalee1"), plot_type = 'imp', targets = targets, cb=TRUE)
+# emulator_plot(ems_wave1, params = groups_out[1:2], plot_type = 'imp', targets = targets, cb=TRUE)
+# emulator_plot(ems_wave1, params = groups_out[7:8], plot_type = 'imp', targets = targets, cb=TRUE)
 
 # nth-maximum implausibility
 emulator_plot(ems_wave1, plot_type = 'nimp', targets = targets, cb=TRUE)  # maximum implausibility
+emulator_plot(ems_wave1, params = c("a0heterosexualmalee1", "a0heterosexualfemalee1"), plot_type = 'nimp', targets = targets, cb=TRUE)  # maximum implausibility
 
 space_removed(ems_wave1, targets, ppd=3) +
   geom_vline(xintercept = 3, lty = 2) + 
@@ -330,19 +349,27 @@ vd <- validation_diagnostics(sigmadoubled_emulator,
 ##############
 # second wave
 
-wave1_points <- generate_new_design(ems_wave1, 60, targets, verbose = TRUE)
+wave1_points <- generate_new_design(ems_wave1, n_points = 60, targets, verbose = TRUE)
 # wave1_points <- generate_new_runs(ems_wave1, n_points = 60, targets, verbose = TRUE)
 
-if (save)
+if (savetofile)
   save(wave1_points, file = "Outputs/wave1_points.RData")
 
 # grid of LHS sampled inputs omitting implausible regions
 plot_wrap(wave1_points, ranges = ranges_in)
 
-# rerun model for all LHS inputs
-wave1_results <- t(apply(wave1_points, 1,
-                         test_get_results, indx_in = indx_in, indx_out = indx_out)) #|> 
-  # setNames()
+
+## rerun model for all LHS inputs
+
+# # in serial
+# wave1_results <- t(apply(wave1_points, 1,
+#                          test_get_results, indx_in = indx_in, indx_out = indx_out)) #|> 
+#   # setNames()
+
+microbenchmark::microbenchmark(
+  wave1_results <- test_get_results_dopar(wave1_points, indx_in, indx_out),
+  unit = "seconds",
+  times = 1)
 
 wave1 <-
   cbind(wave1_points, wave1_results) |> 
@@ -379,20 +406,71 @@ ems_wave2_mult_sigma <- ems_wave2$a0heterosexualmalee1y2017$mult_sigma(2)
 vd <- validation_diagnostics(ems_wave2_mult_sigma, validation = wave1_validation, targets = targets, 
                              plt = TRUE)
 
-# wave2_points <- generate_new_runs(c(ems_wave2, ems_wave1), 60, targets, verbose = TRUE)
-wave2_points <- generate_new_runs(ems_wave2[-c(5,6,13)], 60, targets, verbose = TRUE)
+#############
+# third wave
 
+## can be slow
+# wave2_points <- generate_new_design(c(ems_wave2, ems_wave1), 60, targets, verbose = TRUE)
+wave2_points <- generate_new_design(ems_wave2[-c(5,6,13)], 60, targets, verbose = TRUE)  # subset targets emulators to enable sampling
+
+png(filename = "plots/plot_wrap_wave2_points.png", width = 50, height = 50, units = "cm", res = 64)
 plot_wrap(wave2_points, ranges = ranges_in)
+dev.off()
 
 if (savetofile)
   save(wave2_points, file = "Outputs/wave2_points.RData")
 
-##TODO:
-## more runs?...
+microbenchmark::microbenchmark(
+  wave2_results <- test_get_results_dopar(wave2_points, indx_in, indx_out),
+  unit = "seconds",
+  times = 1)
+
+wave2 <-
+  cbind(wave2_points, wave2_results) |> 
+  `colnames<-`(c(groups_in, groups_out)) |> 
+  as.data.frame()
+
+if (savetofile)
+  save(wave2, file = "Outputs/wave2.RData")
+
+n_sample <- 60
+wave2_training <- wave2[1:n_sample, ]
+wave2_validation <- wave2[(n_sample+1):nrow(wave2), ]
+
+ems_wave3 <- emulator_from_data(input_data = wave2_training,
+                                output_names = names(targets),
+                                check.ranges = TRUE,           # update for plausible only
+                                ranges = ranges_in,
+                                emulator_type = "deterministic",
+                                order = 2)
+if (savetofile)
+  save(ems_wave3, file = "Outputs/ems_wave3.RData")
+
+# contour plot after history matching
+emulator_plot(ems_wave3, plot_type = 'imp', targets = targets, cb=TRUE)
+emulator_plot(ems_wave3, params = c("a0heterosexualmalee1", "a0heterosexualfemalee1"), plot_type = 'imp', targets = targets, cb=TRUE)
+emulator_plot(ems_wave3, params = c("a2heterosexualmalee1", "a2heterosexualfemalee1"), plot_type = 'imp', targets = targets, cb=TRUE)
+
+##############
+# fourth wave
+
+# subset targets emulators to enable sampling
+# wave3_points <- generate_new_design(ems_wave3[c(1,2,3,6)], 60, targets, verbose = TRUE)
+wave3_points <- generate_new_design(ems_wave3[c(1,2,3)], 60, targets, verbose = TRUE)
+
+plot_wrap(wave3_points, ranges = ranges_in)
+
+if (savetofile) {
+  save(wave3_points, file = "Outputs/wave3_points.RData")
+  write.csv(wave3_points, file = "Outputs/wave3_points.csv", row.names = FALSE)
+}
+
+####################
+# combined analysis
 
 # visualisations of non-implausible space by wave
 all_points <- list(as.data.frame(init_points), wave1_points, wave2_points)
-wave_points(all_points, input_names = colnames(wave1_points), p_size=1, zero_in = T)
+wave_points(all_points, input_names = colnames(wave1_points), p_size=1, zero_in = TRUE)
 # wave_points(all_points, input_names = names(ranges_in), p_size=1)
 
 all_waves <- list(wave0, wave1) #, wave2)

@@ -31,11 +31,12 @@ test_get_results_dopar <- function(init_points, indx_in, indx_out) {
   # init_results <- foreach(i = inits_list) %do%
   #   test_get_results(i, indx_in = indx_in, indx_out = indx_out)
   
+  # immutable data
   params0 <- scan(file = "Inputs/Calibration parameters0.txt")
-    
+  
   res <- foreach(i = 1:length(inits_list), .combine = 'rbind',
-                 .packages = c("Rcpp", "gonoHistoryMatching"),
-                 .export = c('params0')
+                 .packages = c("Rcpp", "gonoHistoryMatching")#,
+                 # .export = c('params0')
   ) %dopar% {
     # calibration values not overwritten
     params <- params0
@@ -56,8 +57,8 @@ test_get_results_dopar <- function(init_points, indx_in, indx_out) {
     vout <- inc_mat_to_vector(out)
     vout[indx_out]
     
-    # delete folder
-    unlink(dir_name, recursive = TRUE)
+    # # delete folder
+    # unlink(dir_name, recursive = TRUE)
   }
   
   res
