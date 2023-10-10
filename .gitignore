@@ -2,7 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-Outputs
 Inputs/Calibrated incidence.txt
 Inputs/Calibration parameters.txt
 Inputs/Incidence.txt
