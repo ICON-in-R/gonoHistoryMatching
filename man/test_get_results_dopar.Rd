@@ -2,11 +2,14 @@
 % Please edit documentation in R/test_get_results_dopar.R
 \name{test_get_results_dopar}
 \alias{test_get_results_dopar}
-\title{Parallelised version}
+\title{Parallelised model runner}
 \usage{
 test_get_results_dopar(init_points, indx_in, indx_out)
 }
 \description{
-see
+don't seem to have a read/write race condition problems
+}
+\details{
+see:
 https://stackoverflow.com/questions/58823105/use-doparallel-with-rcpp-function-on-window-inside-an-r-package
 }
