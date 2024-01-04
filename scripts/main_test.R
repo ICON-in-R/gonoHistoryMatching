@@ -3,9 +3,13 @@
 # history matching calibration using C++ code
 # input: transmission rate
 # output: incidence counts
-# https://danny-sc.github.io/determ_workshop/
+#
 # this is a simplified data testing script for
-# a subset in inputs
+# a subset of inputs
+#
+# hmer package workshop:
+# https://danny-sc.github.io/determ_workshop/
+
 
 Rcpp::compileAttributes(pkgdir = here::here(), verbose = TRUE)
 
@@ -13,6 +17,7 @@ library(dplyr)
 library(purrr)
 library(Rcpp)
 
+# Rcpp modules are made available
 sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 
 savetofile <- FALSE
@@ -106,7 +111,7 @@ full_groups_out <- do.call(paste0, groups_mat)
 # subset parameters and data for testing
 groups_out <- full_groups_out[indx_out]
 
-n_grps_out <- length(groups_out)  # 16
+n_grps_out <- length(groups_out)
 
 # all combinations of _input_ covariates
 # difference compared to output is without year
@@ -130,7 +135,7 @@ full_groups_in <- do.call(paste0, groups_in_mat)
 # subset parameters and data for testing
 groups_in <- full_groups_in[indx_in]
 
-n_grps_in <- length(groups_in)  # 8
+n_grps_in <- length(groups_in)
 
 # upper and lower limits for input transmission rates
 ##TODO: what upper limit?
@@ -152,8 +157,8 @@ targets_dat <-
 # mean and standard deviation
 target_val <- data.frame(
   val = inc_mat_to_vector(targets_dat)) |> 
-  mutate(sigma = val/(10*3.92))            # from Marija: 5-10%
-  # mutate(sigma = val/(5*3.92))            # from Marija: 5-10%
+  mutate(sigma = val/(10*3.92))            # from Marija: 10%
+  # mutate(sigma = val/(5*3.92))            # from Marija: 5%
   # mutate(sigma = val/200 + 0.1)          # ad-hoc
 
 # convert to named list
@@ -183,12 +188,8 @@ init_points <-
   rbind(lhs_points, lhs_points_validation) |> 
   `colnames<-`(groups_in)
 
-# rescale
-for (i in 1:n_grps_in) {
-  rdiff <- ranges_in[[i]][2] - ranges_in[[i]][2]
-  init_points[, i] <- init_points[, i]*ranges_in[[i]][2] + rdiff 
-}
-
+init_points <- rescale(ranges_in, init_points)
+  
 if (savetofile)
   save(init_points, file = "Outputs/init_points.RData")
 
@@ -205,7 +206,7 @@ if (FALSE) {
 # init_results <- t(apply(init_points, 1,
 #                         test_get_results, indx_in = indx_in, indx_out = indx_out))
 
-##TODO: error 
+##TODO: error
 ##      task 1 failed - "NULL value passed as symbol address"
 # https://stackoverflow.com/questions/25062383/cant-run-rcpp-function-in-foreach-null-value-passed-as-symbol-address
 
