@@ -17,7 +17,7 @@ library(dplyr)
 library(purrr)
 library(Rcpp)
 
-# Rcpp modules are made available
+# Rcpp modules made available
 sourceCpp("src/GonorrheaDTM.cpp", windowsDebugDLL = FALSE)
 
 savetofile <- FALSE
@@ -145,6 +145,9 @@ ranges_in <-
   rep(list(c(0, 0.05)), n_grps_in) |> 
   setNames(groups_in)
 
+# set column names
+inp_out_df <- cbind_input_output(param_nm = c(groups_in, groups_out))
+
 ######################################
 # create calibration targets (output)
 
@@ -158,8 +161,8 @@ targets_dat <-
 target_val <- data.frame(
   val = inc_mat_to_vector(targets_dat)) |> 
   mutate(sigma = val/(10*3.92))            # from Marija: 10%
-  # mutate(sigma = val/(5*3.92))            # from Marija: 5%
-  # mutate(sigma = val/200 + 0.1)          # ad-hoc
+# mutate(sigma = val/(5*3.92))            # from Marija: 5%
+# mutate(sigma = val/200 + 0.1)          # ad-hoc
 
 # convert to named list
 all_targets <-
@@ -189,7 +192,7 @@ init_points <-
   `colnames<-`(groups_in)
 
 init_points <- rescale(ranges_in, init_points)
-  
+
 if (savetofile)
   save(init_points, file = "Outputs/init_points.RData")
 
@@ -198,13 +201,15 @@ if (savetofile)
 
 # test for single input
 if (FALSE) {
-  init_results <- test_get_results(init_points[i, ], indx_in, indx_out)
+  init_results <- test_get_results(init_points[1, ], indx_in, indx_out)
 }
 
-# # run model for all LHS inputs
-# # in serial
-# init_results <- t(apply(init_points, 1,
-#                         test_get_results, indx_in = indx_in, indx_out = indx_out))
+# run model for all LHS inputs
+# in serial
+if (FALSE) {
+  init_results <- t(apply(init_points, 1,
+                          test_get_results, indx_in = indx_in, indx_out = indx_out))
+}
 
 ##TODO: error
 ##      task 1 failed - "NULL value passed as symbol address"
@@ -216,22 +221,17 @@ library(parallel)
 library(doParallel)
 library(foreach)
 
-inits_list <- purrr::array_branch(init_points, margin = 1)
-
 # # non-parallel
+# inits_list <- purrr::array_branch(init_points, margin = 1)
 # init_results <- foreach(i = 1:length((inits_list))) %do%
 # init_results <- foreach(i = 1:2, .combine = 'rbind') %do%
 #   test_get_results(inits_list[[i]], indx_in = indx_in, indx_out = indx_out)
 
 microbenchmark::microbenchmark(
-  init_results <- test_get_results_dopar(init_points, indx_in, indx_out),
+  init_results <- test_get_results_dopar(init_points[1:10, ], indx_in, indx_out),
   times = 1)
 
-# all named initial inputs and outputs
-wave0 <-
-  cbind(init_points, init_results) |> 
-  `colnames<-`(c(groups_in, groups_out)) |> 
-  as.data.frame()
+wave0 <- inp_out_df(init_points, init_results)
 
 if (savetofile)
   save(wave0, file = "Outputs/wave0.RData")
@@ -332,7 +332,7 @@ space_removed(ems_wave1, targets, ppd=3) +
 # Emulator diagnostics
 vd <- validation_diagnostics(ems_wave1,
                              validation = wave0, targets = targets, plt = TRUE)
-                             # validation = validation[-8, ], targets = targets, plt = TRUE)
+# validation = validation[-8, ], targets = targets, plt = TRUE)
 
 sigmadoubled_emulator <- ems_wave1$a0heterosexualmalee1y2017$mult_sigma(2)
 
@@ -372,10 +372,7 @@ microbenchmark::microbenchmark(
   unit = "seconds",
   times = 1)
 
-wave1 <-
-  cbind(wave1_points, wave1_results) |> 
-  `colnames<-`(c(groups_in, groups_out)) |> 
-  as.data.frame()
+wave1 <- inp_out_df(wave1_points, wave1_results)
 
 if (savetofile)
   save(wave1, file = "Outputs/wave1.RData")
@@ -426,10 +423,7 @@ microbenchmark::microbenchmark(
   unit = "seconds",
   times = 1)
 
-wave2 <-
-  cbind(wave2_points, wave2_results) |> 
-  `colnames<-`(c(groups_in, groups_out)) |> 
-  as.data.frame()
+wave2 <- inp_out_df(wave2_points, wave2_results)
 
 if (savetofile)
   save(wave2, file = "Outputs/wave2.RData")

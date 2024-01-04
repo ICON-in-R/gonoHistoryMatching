@@ -13,3 +13,15 @@ rescale <- function(ranges, vals) {
   }
   vals
 }
+
+
+#' Combined named inputs and outputs
+#' 
+cbind_input_output <- function(param_nm) {
+  force(param_nm)
+  function(inp, out) {
+    cbind(inp, out) |> 
+      `colnames<-`(param_nm) |> 
+      as.data.frame()
+  }
+}
