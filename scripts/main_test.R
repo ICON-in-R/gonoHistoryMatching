@@ -138,8 +138,6 @@ groups_in <- full_groups_in[indx_in]
 n_grps_in <- length(groups_in)
 
 # upper and lower limits for input transmission rates
-##TODO: what upper limit?
-##      Marija to check ...
 # point value in file is 0.022
 ranges_in <-
   rep(list(c(0, 0.05)), n_grps_in) |> 
@@ -179,6 +177,15 @@ if (savetofile)
 # number of full model simulations
 n_sim <- n_grps_in*10
 n_validation <- n_grps_in
+
+save(ranges_in,
+     n_sim, n_validation,
+     n_grps_in, n_grps_out,
+     groups_in, groups_out,
+     groups_in_mat, groups_mat,
+     indx_in, indx_out,
+     all_targets, target_val, targets, targets_dat,
+     file = "data/all_input_parameters.RData")
 
 ##################################
 # latin hypercube design (inputs)
